@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground">
+
+    <!-- TOP BAR - Reduced height by 10%, white menu icon -->
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:elevation="0dp"
+        app:elevation="0dp">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            android:background="?attr/colorPrimary"
+            app:title="EVOHOME CONTROL"
+            app:titleTextColor="@android:color/white"
+            app:menu="@menu/main_menu"
+            android:theme="@style/ToolbarTheme"/>
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <!-- Status/Mode Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:background="@color/background_dark_bar"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <TextView
+            android:id="@+id/systemModeText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="FOLLOWING SCHEDULE"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_white"
+            android:letterSpacing="0.05"/>
+
+    <!-- Mode Action Buttons -->
+    <ImageButton
+        android:id="@+id/awayButton"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="4dp"
+        android:src="@drawable/ic_away"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Away Mode"
+        android:padding="6dp"
+        app:tint="@color/text_white"/>
+
+    <ImageButton
+        android:id="@+id/returnHomeButton"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="4dp"
+        android:src="@drawable/ic_return_home"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Return Home"
+        android:padding="6dp"
+        app:tint="@color/text_white"/>
+
+    <ImageButton
+        android:id="@+id/lunchButton"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="4dp"
+        android:src="@drawable/ic_lunch"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Lunch Mode"
+        android:padding="6dp"
+        app:tint="@color/text_white"/>
+
+    <ImageButton
+        android:id="@+id/workFromHomeButton"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="4dp"
+        android:src="@drawable/ic_work_from_home"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Work From Home"
+        android:padding="6dp"
+        app:tint="@color/text_white"/>
+
+    </LinearLayout>
+<!-- Connection Status Bar -->
+<LinearLayout
+    android:id="@+id/connectionStatusBar"
+    android:layout_width="match_parent"
+    android:layout_height="32dp"
+    android:background="#D32F2F"
+    android:orientation="horizontal"
+    android:gravity="center"
+    android:visibility="gone"
+    android:clickable="true"
+    android:focusable="true"
+    app:layout_anchor="@id/toolbar"
+    app:layout_anchorGravity="bottom">
+    
+    <ImageView
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:src="@android:drawable/stat_notify_error"
+        android:layout_marginEnd="8dp"
+        app:tint="@android:color/white"/>
+    
+    <TextView
+        android:id="@+id/connectionStatusText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Connection lost"
+        android:textColor="@android:color/white"
+        android:textSize="12sp"
+        android:textStyle="bold"/>
+</LinearLayout>
+
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="40dp"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- AUTO MODE BAR REMOVED -->
+
+                <!-- MY ZONES SECTION HEADER -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="MY ZONES"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary_black"
+                    android:letterSpacing="0.1"
+                    android:layout_marginBottom="12dp"/>
+
+                <!-- Zones Grid - 2x2 Layout -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/zonesRecyclerView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    android:clipToPadding="false"/>
+
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    <!-- Loading Overlay -->
+    <FrameLayout
+        android:id="@+id/loadingOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#80000000"
+        android:visibility="gone"
+        android:clickable="true"
+        android:focusable="true">
+
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:indeterminate="true"
+            app:indicatorColor="?attr/colorPrimary"/>
+    </FrameLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

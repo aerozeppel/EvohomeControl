@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary Brand Color - Red -->
+    <color name="evohome_red">#D32F2F</color>
+    <color name="evohome_red_dark">#B71C1C</color>
+    
+    <!-- Temperature Colors -->
+    <color name="temp_warm_orange">#FF6B35</color>
+    <color name="temp_cool_teal">#00897B</color>
+    <color name="temp_eco_green">#43A047</color>
+    
+    <!-- Background Colors -->
+    <color name="background_light">#F5F5F5</color>
+    <color name="background_white">#FFFFFF</color>
+    <color name="background_dark_bar">#424242</color>
+    
+    <!-- Text Colors -->
+    <color name="text_primary_black">#212121</color>
+    <color name="text_secondary_grey">#757575</color>
+    <color name="text_white">#FFFFFF</color>
+    
+    <!-- Status Colors -->
+    <color name="status_active">#FF6B35</color>
+    <color name="status_following">#00897B</color>
+    
+    <!-- Dividers -->
+    <color name="divider_grey">#E0E0E0</color>
+</resources>

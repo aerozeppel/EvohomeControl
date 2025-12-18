@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <!-- Duration Display with Controls -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:padding="16dp"
+        android:background="?attr/colorSurfaceVariant"
+        android:layout_marginBottom="16dp">
+
+        <Button
+            android:id="@+id/durationMinus"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:text="-"
+            android:textSize="24sp"
+            style="@style/Widget.Material3.Button.OutlinedButton"/>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Duration"
+                android:textSize="14sp"
+                android:textColor="?android:attr/textColorSecondary"/>
+
+            <TextView
+                android:id="@+id/durationDisplay"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1h"
+                android:textSize="32sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorPrimary"
+                android:layout_marginTop="4dp"/>
+
+            <TextView
+                android:id="@+id/durationSubtext"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Until 15:00"
+                android:textSize="12sp"
+                android:textColor="?android:attr/textColorSecondary"
+                android:layout_marginTop="4dp"/>
+
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/durationPlus"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:text="+"
+            android:textSize="24sp"
+            style="@style/Widget.Material3.Button.OutlinedButton"/>
+
+    </LinearLayout>
+
+    <!-- Quick Duration Buttons -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Quick Select"
+        android:textSize="12sp"
+        android:textColor="?android:attr/textColorSecondary"
+        android:layout_marginBottom="8dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/duration1h"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="4dp"
+            android:text="1h"
+            style="@style/Widget.Material3.Button.TonalButton"/>
+
+        <Button
+            android:id="@+id/duration4h"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="4dp"
+            android:text="4h"
+            style="@style/Widget.Material3.Button.TonalButton"/>
+
+        <Button
+            android:id="@+id/duration8h"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="4dp"
+            android:text="8h"
+            style="@style/Widget.Material3.Button.TonalButton"/>
+
+        <Button
+            android:id="@+id/duration24h"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="4dp"
+            android:text="24h"
+            style="@style/Widget.Material3.Button.TonalButton"/>
+
+    </LinearLayout>
+
+</LinearLayout>

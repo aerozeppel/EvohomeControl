@@ -1,0 +1,20 @@
+<resources>
+    <!-- Widget Strings -->
+    <string name="widget_description">Quick access to your Evohome zones with boost controls</string>
+    <string name="widget_loading">Loading zones…</string>
+    <string name="widget_error">Failed to load</string>
+    <string name="widget_not_logged_in">Not logged in</string>
+    <string name="widget_boost_success">Boosted zone</string>
+    
+    <!-- Main Activity Strings -->
+    <string name="system_mode_auto">Auto Mode</string>
+    <string name="system_mode_away">Away Mode</string>
+    <string name="system_mode_day_off">Day Off</string>
+    <string name="system_mode_heating_off">Heating Off</string>
+    <string name="system_status_normal">All zones running normally</string>
+    <string name="quick_actions">Quick Actions</string>
+    <string name="boost_all">Boost All</string>
+    <string name="away_mode">Away Mode</string>
+    <string name="my_zones">My Zones</string>
+    <string name="settings">Settings</string>
+</resources>

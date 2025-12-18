@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="300dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@drawable/dialog_background"
+    android:layout_gravity="center">
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/dialogTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Boost Zone"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@android:color/black"
+        android:gravity="center"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- Zone Name -->
+    <TextView
+        android:id="@+id/dialogZoneName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Living Room"
+        android:textSize="16sp"
+        android:textColor="@android:color/black"
+        android:gravity="center"
+        android:layout_marginBottom="24dp"/>
+
+    <!-- Temperature Adjustment -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="16dp">
+
+        <!-- Minus Button -->
+        <Button
+            android:id="@+id/btnMinus"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:text="-"
+            android:textSize="24sp"
+            android:textStyle="bold"/>
+
+        <!-- Temperature Display -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp">
+
+            <TextView
+                android:id="@+id/offsetLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Target Temperature"
+                android:textSize="12sp"
+                android:textColor="@android:color/darker_gray"/>
+
+            <TextView
+                android:id="@+id/tempOffset"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="20.0°C"
+                android:textSize="32sp"
+                android:textStyle="bold"
+                android:textColor="#4CAF50"
+                android:layout_marginTop="4dp"/>
+        </LinearLayout>
+
+        <!-- Plus Button -->
+        <Button
+            android:id="@+id/btnPlus"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:text="+"
+            android:textSize="24sp"
+            android:textStyle="bold"/>
+    </LinearLayout>
+
+    <!-- Info Text -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Boost duration: 1 hour"
+        android:textSize="14sp"
+        android:textColor="@android:color/darker_gray"
+        android:gravity="center"
+        android:layout_marginBottom="24dp"/>
+
+    <!-- Action Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end">
+
+        <Button
+            android:id="@+id/btnCancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cancel"
+            android:textColor="@android:color/darker_gray"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_marginEnd="8dp"/>
+
+        <Button
+            android:id="@+id/btnBoost"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Boost"
+            android:textColor="@android:color/white"
+            android:background="#4CAF50"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"/>
+    </LinearLayout>
+
+</LinearLayout>

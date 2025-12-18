@@ -1,0 +1,18 @@
+# Gradle
+.gradle/
+build/
+app/build/
+
+# Android Studio
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Java heap dumps
+*.hprof
+
+# Local properties (contains SDK paths)
+local.properties

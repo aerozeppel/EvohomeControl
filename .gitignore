@@ -1,0 +1,27 @@
+# Gradle
+.gradle/
+build/
+app/build/
+gradle/
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+
+# Local config
+local.properties
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Java heap dumps
+*.hprof
+
+# Temporary scripts
+temp_build.bat
+# Gradle
+.gradle/
+build/
+app/build/
+gradle/

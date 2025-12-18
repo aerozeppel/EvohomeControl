@@ -1,0 +1,491 @@
+package com.yourname.evohomecontrol
+
+import android.app.TimePickerDialog
+import android.graphics.Color
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.tabs.TabLayout
+import com.google.android.material.textfield.TextInputEditText
+import com.yourname.evohomecontrol.api.*
+import com.yourname.evohomecontrol.databinding.ActivityScheduleEditorBinding
+import com.yourname.evohomecontrol.databinding.ItemSwitchpointBinding
+import kotlinx.coroutines.*
+import retrofit2.HttpException
+import java.text.DecimalFormat
+import java.util.Calendar
+
+class ScheduleEditorActivity : AppCompatActivity() {
+
+    private lateinit var binding: ActivityScheduleEditorBinding
+    private val schedule = mutableMapOf<String, MutableList<Switchpoint>>()
+    private val daysOfWeek = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+    private var currentDay = "Monday"
+    private lateinit var adapter: SwitchpointAdapter
+    private var hasUnsavedChanges = false
+    
+    // API related
+    private val apiService = EvohomeApiClient.apiService
+    private var zoneId: String? = null
+    private var zoneName: String? = null
+    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityScheduleEditorBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        // Get zone info from intent
+        zoneId = intent.getStringExtra("zone_id")
+        zoneName = intent.getStringExtra("zone_name")
+
+        setSupportActionBar(binding.toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.title = "${zoneName ?: "Unknown Zone"} Schedule"
+
+        // Initialize schedule with empty lists
+        daysOfWeek.forEach { day ->
+            schedule[day] = mutableListOf()
+        }
+
+        // Set current day based on today
+        val calendar = Calendar.getInstance()
+        val todayIndex = (calendar.get(Calendar.DAY_OF_WEEK) + 5) % 7 // Convert Sunday=1 to Monday=0
+        currentDay = daysOfWeek[todayIndex]
+
+        setupTabs()
+        setupRecyclerView()
+        setupButtons()
+        
+        // Load schedule from API
+        loadScheduleFromApi()
+        
+        // Select today's tab
+        binding.dayTabs.getTabAt(todayIndex)?.select()
+    }
+
+    private fun loadScheduleFromApi() {
+        if (zoneId == null) {
+            Toast.makeText(this, "Error: No zone ID provided", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
+
+        binding.loadingOverlay.visibility = View.VISIBLE
+
+        scope.launch {
+            try {
+                // Get auth token
+                val sharedPrefs = getSharedPreferences("evohome_prefs", MODE_PRIVATE)
+                val accessToken = sharedPrefs.getString("access_token", "") ?: ""
+                val authHeader = "bearer $accessToken"
+
+                val response = withContext(Dispatchers.IO) {
+                    apiService.getZoneSchedule(zoneId!!, authHeader)
+                }
+
+                if (response.isSuccessful && response.body() != null) {
+                    val zoneSchedule = response.body()!!
+                    
+                    // Parse the schedule and format times to HH:MM
+                    zoneSchedule.dailySchedules.forEach { dailySchedule ->
+                        val formattedSwitchpoints = dailySchedule.switchpoints.map { switchpoint ->
+                            Switchpoint(
+                                temperature = switchpoint.temperature,
+                                timeOfDay = formatTimeToHHMM(switchpoint.timeOfDay)
+                            )
+                        }.toMutableList()
+                        schedule[dailySchedule.dayOfWeek] = formattedSwitchpoints
+                    }
+
+                    updateUI()
+                } else {
+                    throw Exception("Failed to load schedule: ${response.code()}")
+                }
+                
+                binding.loadingOverlay.visibility = View.GONE
+            } catch (e: Exception) {
+                binding.loadingOverlay.visibility = View.GONE
+                handleError("Failed to load schedule", e)
+            }
+        }
+    }
+
+    private fun formatTimeToHHMM(time: String): String {
+        // Remove seconds if present (e.g., "06:30:00" -> "06:30")
+        return time.substringBeforeLast(":", time)
+    }
+
+    private fun setupTabs() {
+        daysOfWeek.forEach { day ->
+            binding.dayTabs.addTab(binding.dayTabs.newTab().setText(day.take(3)))
+        }
+
+        binding.dayTabs.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab?) {
+                tab?.let {
+                    currentDay = daysOfWeek[it.position]
+                    updateUI()
+                }
+            }
+
+            override fun onTabUnselected(tab: TabLayout.Tab?) {}
+            override fun onTabReselected(tab: TabLayout.Tab?) {}
+        })
+    }
+
+    private fun setupRecyclerView() {
+        adapter = SwitchpointAdapter(
+            onEdit = { position -> editSwitchpoint(position) },
+            onDelete = { position -> deleteSwitchpoint(position) }
+        )
+        binding.switchpointsRecyclerView.layoutManager = LinearLayoutManager(this)
+        binding.switchpointsRecyclerView.adapter = adapter
+    }
+
+    private fun setupButtons() {
+        binding.addSwitchpointButton.setOnClickListener {
+            showAddSwitchpointDialog()
+        }
+
+        binding.copyDayButton.setOnClickListener {
+            showCopyDayDialog()
+        }
+
+        binding.saveButton.setOnClickListener {
+            saveSchedule()
+        }
+    }
+
+    private fun updateUI() {
+        val switchpoints = schedule[currentDay] ?: mutableListOf()
+        
+        if (switchpoints.isEmpty()) {
+            binding.emptyStateText.visibility = View.VISIBLE
+            binding.switchpointsRecyclerView.visibility = View.GONE
+        } else {
+            binding.emptyStateText.visibility = View.GONE
+            binding.switchpointsRecyclerView.visibility = View.VISIBLE
+            adapter.submitList(switchpoints.sortedBy { it.timeOfDay })
+        }
+    }
+
+    private fun showAddSwitchpointDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_edit_switchpoint, null)
+        val timeInput = dialogView.findViewById<TextInputEditText>(R.id.timeInput)
+        val tempInput = dialogView.findViewById<TextInputEditText>(R.id.tempInput)
+
+        timeInput.setOnClickListener {
+            showTimePicker { time ->
+                timeInput.setText(time)
+            }
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Add Switchpoint")
+            .setView(dialogView)
+            .setPositiveButton("Add") { _, _ ->
+                val time = timeInput.text.toString()
+                val temp = tempInput.text.toString().toDoubleOrNull()
+
+                if (time.isNotEmpty() && temp != null) {
+                    if (temp < 5.0 || temp > 35.0) {
+                        Toast.makeText(this, "Temperature must be between 5°C and 35°C", Toast.LENGTH_SHORT).show()
+                    } else if (!isValidTimeFormat(time)) {
+                        Toast.makeText(this, "Please use HH:MM format (e.g., 06:30)", Toast.LENGTH_SHORT).show()
+                    } else {
+                        addSwitchpoint(time, temp)
+                    }
+                } else {
+                    Toast.makeText(this, "Please enter valid time and temperature", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun isValidTimeFormat(time: String): Boolean {
+        val regex = Regex("^([0-1][0-9]|2[0-3]):[0-5][0-9]$")
+        return regex.matches(time)
+    }
+
+    private fun showTimePicker(onTimeSelected: (String) -> Unit) {
+        val currentHour = 12
+        val currentMinute = 0
+
+        TimePickerDialog(
+            this,
+            { _, hour, minute ->
+                val time = String.format("%02d:%02d", hour, minute)
+                onTimeSelected(time)
+            },
+            currentHour,
+            currentMinute,
+            true // 24-hour format
+        ).show()
+    }
+
+    private fun addSwitchpoint(time: String, temperature: Double) {
+        val switchpoints = schedule[currentDay] ?: mutableListOf()
+        
+        // Check if time already exists
+        if (switchpoints.any { it.timeOfDay == time }) {
+            Toast.makeText(this, "A switchpoint already exists at this time", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        switchpoints.add(Switchpoint(temperature, time))
+        schedule[currentDay] = switchpoints
+        markAsModified()
+        updateUI()
+    }
+
+    private fun editSwitchpoint(position: Int) {
+        val switchpoints = schedule[currentDay] ?: return
+        val sortedList = switchpoints.sortedBy { it.timeOfDay }
+        val switchpoint = sortedList[position]
+
+        val dialogView = layoutInflater.inflate(R.layout.dialog_edit_switchpoint, null)
+        val timeInput = dialogView.findViewById<TextInputEditText>(R.id.timeInput)
+        val tempInput = dialogView.findViewById<TextInputEditText>(R.id.tempInput)
+
+        timeInput.setText(switchpoint.timeOfDay)
+        tempInput.setText(switchpoint.temperature.toString())
+
+        timeInput.setOnClickListener {
+            showTimePicker { time ->
+                timeInput.setText(time)
+            }
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Edit Switchpoint")
+            .setView(dialogView)
+            .setPositiveButton("Save") { _, _ ->
+                val time = timeInput.text.toString()
+                val temp = tempInput.text.toString().toDoubleOrNull()
+
+                if (time.isNotEmpty() && temp != null) {
+                    if (temp < 5.0 || temp > 35.0) {
+                        Toast.makeText(this, "Temperature must be between 5°C and 35°C", Toast.LENGTH_SHORT).show()
+                    } else if (!isValidTimeFormat(time)) {
+                        Toast.makeText(this, "Please use HH:MM format (e.g., 06:30)", Toast.LENGTH_SHORT).show()
+                    } else {
+                        // Remove old switchpoint and add updated one
+                        switchpoints.remove(switchpoint)
+                        switchpoints.add(Switchpoint(temp, time))
+                        markAsModified()
+                        updateUI()
+                    }
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun deleteSwitchpoint(position: Int) {
+        val switchpoints = schedule[currentDay] ?: return
+        val sortedList = switchpoints.sortedBy { it.timeOfDay }
+        val switchpoint = sortedList[position]
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Delete Switchpoint")
+            .setMessage("Are you sure you want to delete the switchpoint at ${switchpoint.timeOfDay}?")
+            .setPositiveButton("Delete") { _, _ ->
+                switchpoints.remove(switchpoint)
+                markAsModified()
+                updateUI()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showCopyDayDialog() {
+        val currentSwitchpoints = schedule[currentDay]
+        if (currentSwitchpoints.isNullOrEmpty()) {
+            Toast.makeText(this, "No switchpoints to copy", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val targetDays = daysOfWeek.filter { it != currentDay }
+        val checkedItems = BooleanArray(targetDays.size) { false }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Copy $currentDay's schedule to:")
+            .setMultiChoiceItems(targetDays.toTypedArray(), checkedItems) { _, which, isChecked ->
+                checkedItems[which] = isChecked
+            }
+            .setPositiveButton("Copy") { _, _ ->
+                var copiedCount = 0
+                targetDays.forEachIndexed { index, day ->
+                    if (checkedItems[index]) {
+                        schedule[day] = currentSwitchpoints.map { 
+                            Switchpoint(it.temperature, it.timeOfDay) 
+                        }.toMutableList()
+                        copiedCount++
+                    }
+                }
+                markAsModified()
+                Toast.makeText(this, "Schedule copied to $copiedCount day(s)", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun markAsModified() {
+        hasUnsavedChanges = true
+        binding.saveButton.isEnabled = true
+        binding.saveButton.alpha = 1.0f
+    }
+
+    private fun saveSchedule() {
+        if (zoneId == null) {
+            Toast.makeText(this, "Error: No zone ID", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        binding.loadingOverlay.visibility = View.VISIBLE
+        binding.saveButton.isEnabled = false
+
+        scope.launch {
+            try {
+                // Convert schedule to API format
+                val dailySchedules = daysOfWeek.map { day ->
+                    DailySchedule(
+                        dayOfWeek = day,
+                        switchpoints = schedule[day] ?: emptyList()
+                    )
+                }
+
+                val zoneSchedule = ZoneSchedule(dailySchedules)
+
+                // Get auth token
+                val sharedPrefs = getSharedPreferences("evohome_prefs", MODE_PRIVATE)
+                val accessToken = sharedPrefs.getString("access_token", "") ?: ""
+                val authHeader = "bearer $accessToken"
+
+                // Save to API
+                withContext(Dispatchers.IO) {
+                    apiService.updateZoneSchedule(zoneId!!, authHeader, schedule = zoneSchedule)
+                }
+
+                binding.loadingOverlay.visibility = View.GONE
+                hasUnsavedChanges = false
+                binding.saveButton.alpha = 0.5f
+                Toast.makeText(this@ScheduleEditorActivity, "Schedule saved successfully!", Toast.LENGTH_SHORT).show()
+
+            } catch (e: Exception) {
+                binding.loadingOverlay.visibility = View.GONE
+                binding.saveButton.isEnabled = true
+                handleError("Failed to save schedule", e)
+            }
+        }
+    }
+
+    private fun handleError(message: String, e: Exception) {
+        val errorDetail = when (e) {
+            is HttpException -> "HTTP ${e.code()}: ${e.message()}"
+            else -> e.message ?: "Unknown error"
+        }
+        
+        Toast.makeText(this, "$message: $errorDetail", Toast.LENGTH_LONG).show()
+        e.printStackTrace()
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        if (hasUnsavedChanges) {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Unsaved Changes")
+                .setMessage("You have unsaved changes. Are you sure you want to leave?")
+                .setPositiveButton("Leave") { _, _ ->
+                    finish()
+                }
+                .setNegativeButton("Stay", null)
+                .show()
+        } else {
+            finish()
+        }
+        return true
+    }
+
+    override fun onBackPressed() {
+        if (hasUnsavedChanges) {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Unsaved Changes")
+                .setMessage("You have unsaved changes. Are you sure you want to leave?")
+                .setPositiveButton("Leave") { _, _ ->
+                    super.onBackPressed()
+                }
+                .setNegativeButton("Stay", null)
+                .show()
+        } else {
+            super.onBackPressed()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        scope.cancel()
+    }
+}
+
+class SwitchpointAdapter(
+    private val onEdit: (Int) -> Unit,
+    private val onDelete: (Int) -> Unit
+) : RecyclerView.Adapter<SwitchpointAdapter.SwitchpointViewHolder>() {
+
+    private var switchpoints = listOf<Switchpoint>()
+
+    fun submitList(list: List<Switchpoint>) {
+        switchpoints = list
+        notifyDataSetChanged()
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SwitchpointViewHolder {
+        val binding = ItemSwitchpointBinding.inflate(
+            LayoutInflater.from(parent.context),
+            parent,
+            false
+        )
+        return SwitchpointViewHolder(binding)
+    }
+
+    override fun onBindViewHolder(holder: SwitchpointViewHolder, position: Int) {
+        holder.bind(switchpoints[position], position)
+    }
+
+    override fun getItemCount() = switchpoints.size
+
+    inner class SwitchpointViewHolder(
+        private val binding: ItemSwitchpointBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
+
+        fun bind(switchpoint: Switchpoint, position: Int) {
+            val tempFormat = DecimalFormat("0.0")
+            binding.timeText.text = switchpoint.timeOfDay
+            binding.temperatureText.text = "${tempFormat.format(switchpoint.temperature)}°"
+
+            // Color the temperature block based on value
+            val tempColor = when {
+                switchpoint.temperature >= 20.0 -> Color.parseColor("#FF6B35") // Warm Orange
+                switchpoint.temperature >= 18.0 -> Color.parseColor("#FFA726") // Medium Orange
+                else -> Color.parseColor("#00897B") // Cool Teal
+            }
+            binding.tempBlock.setBackgroundColor(tempColor)
+
+            binding.editButton.setOnClickListener {
+                onEdit(position)
+            }
+
+            binding.deleteButton.setOnClickListener {
+                onDelete(position)
+            }
+        }
+    }
+}

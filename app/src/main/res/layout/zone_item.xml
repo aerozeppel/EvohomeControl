@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="4dp"
+    app:cardCornerRadius="0dp"
+    app:cardElevation="4dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- TOP 75% - WHITE SECTION - CURRENT STATE -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="3"
+            android:orientation="vertical"
+            android:background="@color/background_white"
+            android:padding="16dp"
+            android:gravity="center">
+
+            <!-- Zone Name -->
+            <TextView
+                android:id="@+id/zoneName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="FRONT BEDROOM"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_secondary_grey"
+                android:letterSpacing="0.05"
+                android:gravity="center"
+                android:maxLines="2"
+                android:ellipsize="end"/>
+
+            <!-- Current Temperature - LARGE -->
+            <TextView
+                android:id="@+id/currentTemp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="20.0°"
+                android:textSize="48sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary_black"
+                android:fontFamily="sans-serif-medium"/>
+
+            <!-- Status Indicator -->
+            <TextView
+                android:id="@+id/statusIndicator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="FOLLOWING SCHEDULE"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_secondary_grey"
+                android:letterSpacing="0.05"/>
+
+        </LinearLayout>
+
+        <!-- BOTTOM 25% - COLORED SECTION - TARGET STATE -->
+        <LinearLayout
+            android:id="@+id/targetSection"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:background="@color/temp_cool_teal"
+            android:padding="12dp"
+            android:gravity="center">
+
+            <!-- Target Temperature -->
+            <TextView
+                android:id="@+id/targetTemp"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="18.0°"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_white"
+                android:gravity="center"
+                android:fontFamily="sans-serif-medium"/>
+
+            <!-- Action Icons -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <ImageButton
+                    android:id="@+id/tempButton"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@android:drawable/ic_menu_edit"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:tint="@color/text_white"
+                    android:contentDescription="Edit Temperature"
+                    android:padding="4dp"/>
+
+                <ImageButton
+                    android:id="@+id/scheduleButton"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginStart="8dp"
+                    android:src="@android:drawable/ic_menu_my_calendar"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:tint="@color/text_white"
+                    android:contentDescription="Edit Schedule"
+                    android:padding="4dp"/>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Heat Demand Indicator (Hidden by default) -->
+<LinearLayout
+    android:id="@+id/heatDemandContainer"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="top|end"
+    android:layout_margin="8dp"
+    android:orientation="horizontal"
+    android:padding="4dp"
+    android:gravity="center_vertical"
+    android:visibility="gone">
+    
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="🔥"
+        android:textSize="12sp"
+        android:layout_marginEnd="2dp"/>
+    
+    <TextView
+        android:id="@+id/heatDemand"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="75%"
+        android:textSize="10sp"
+        android:textStyle="bold"
+        android:textColor="@color/status_active"/>
+</LinearLayout>
+
+</androidx.cardview.widget.CardView>
