@@ -1,4 +1,5 @@
 <resources>
+    <string name="app_name">Evohome Control</string>
     <!-- Widget Strings -->
     <string name="widget_description">Quick access to your Evohome zones with boost controls</string>
     <string name="widget_loading">Loading zones…</string>

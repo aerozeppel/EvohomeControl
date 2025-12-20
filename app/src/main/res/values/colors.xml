@@ -28,4 +28,5 @@
     <!-- Dividers -->
     <color name="divider_grey">#E0E0E0</color>
     <color name="temp_teal_dark">#4D9B8F</color>
+    <color name="ic_launcher_background">#FFFFFF</color>
 </resources>
