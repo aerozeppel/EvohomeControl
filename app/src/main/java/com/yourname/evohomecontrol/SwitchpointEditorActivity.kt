@@ -20,11 +20,16 @@ class SwitchpointEditorActivity : AppCompatActivity() {
     private lateinit var gestureDetector: GestureDetector
     private var hasChanges = false
 
+    private var isNewSwitchpoint = false
+    private var currentTime: String = "00:00"
+    private var originalTime: String = "00:00"
+
     // Intent extras keys
     companion object {
         const val EXTRA_TEMPERATURE = "temperature"
         const val EXTRA_TIME = "time"
         const val EXTRA_POSITION = "position"
+        const val EXTRA_IS_NEW = "is_new"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,11 +40,21 @@ class SwitchpointEditorActivity : AppCompatActivity() {
         // Get data from intent
         currentTemperature = intent.getDoubleExtra(EXTRA_TEMPERATURE, 18.5)
         originalTemperature = currentTemperature
-        val timeString = intent.getStringExtra(EXTRA_TIME) ?: "00:00"
+        currentTime = intent.getStringExtra(EXTRA_TIME) ?: "00:00"
+        originalTime = currentTime
+        isNewSwitchpoint = intent.getBooleanExtra(EXTRA_IS_NEW, false)
 
         // Set initial values
         updateTemperatureDisplay()
-        binding.timeText.text = timeString
+        binding.timeText.text = currentTime
+
+        // Make time clickable for new switchpoints
+        if (isNewSwitchpoint) {
+            binding.timeDisplay.setOnClickListener {
+                showTimePicker()
+            }
+            binding.timeDisplay.foreground = getDrawable(android.R.drawable.list_selector_background)
+        }
 
         // Setup gesture detector for swipe up/down
         gestureDetector = GestureDetector(this, SwipeGestureListener())
@@ -48,23 +63,74 @@ class SwitchpointEditorActivity : AppCompatActivity() {
         setupListeners()
     }
 
+    private fun showTimePicker() {
+        val timeParts = currentTime.split(":")
+        val currentHour = timeParts.getOrNull(0)?.toIntOrNull() ?: 12
+        val currentMinute = timeParts.getOrNull(1)?.toIntOrNull() ?: 0
+
+        android.app.TimePickerDialog(
+            this,
+            { _, hour, minute ->
+                currentTime = String.format("%02d:%02d", hour, minute)
+                binding.timeText.text = currentTime
+                markAsModified()
+            },
+            currentHour,
+            currentMinute,
+            true // 24-hour format
+        ).show()
+    }
+
     private fun setupListeners() {
         // Temperature container - handle touch events
+        var startY = 0f
+        var lastY = 0f
+        var isDragging = false
+
         binding.temperatureContainer.setOnTouchListener { view, event ->
-            gestureDetector.onTouchEvent(event)
-            
-            // Also handle simple taps
-            if (event.action == MotionEvent.ACTION_UP) {
-                val y = event.y
-                val containerHeight = view.height
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    startY = event.y
+                    lastY = event.y
+                    isDragging = false
+                }
                 
-                // Tap in upper half = increase
-                if (y < containerHeight / 2) {
-                    increaseTemperature()
-                } 
-                // Tap in lower half = decrease
-                else {
-                    decreaseTemperature()
+                MotionEvent.ACTION_MOVE -> {
+                    val deltaY = lastY - event.y
+                    
+                    // If moved more than 10 pixels, consider it a drag
+                    if (kotlin.math.abs(event.y - startY) > 10) {
+                        isDragging = true
+                        
+                        // For every 50 pixels of movement, change temperature
+                        if (kotlin.math.abs(deltaY) > 50) {
+                            if (deltaY > 0) {
+                                // Dragged up - increase temperature
+                                increaseTemperature()
+                            } else {
+                                // Dragged down - decrease temperature
+                                decreaseTemperature()
+                            }
+                            lastY = event.y
+                        }
+                    }
+                }
+                
+                MotionEvent.ACTION_UP -> {
+                    // If not dragging, treat as tap
+                    if (!isDragging) {
+                        val y = event.y
+                        val containerHeight = view.height
+                        
+                        // Tap in upper half = increase
+                        if (y < containerHeight / 2) {
+                            increaseTemperature()
+                        } 
+                        // Tap in lower half = decrease
+                        else {
+                            decreaseTemperature()
+                        }
+                    }
                 }
             }
             true
@@ -88,6 +154,11 @@ class SwitchpointEditorActivity : AppCompatActivity() {
         // Info button
         binding.infoButton.setOnClickListener {
             showInfoDialog()
+        }
+
+        // Hide delete button for new switchpoints
+        if (isNewSwitchpoint) {
+            binding.deleteButton.visibility = View.GONE
         }
     }
 
@@ -124,10 +195,13 @@ class SwitchpointEditorActivity : AppCompatActivity() {
     }
 
     private fun markAsModified() {
-        if (currentTemperature != originalTemperature && !hasChanges) {
+        val hasTemperatureChange = currentTemperature != originalTemperature
+        val hasTimeChange = isNewSwitchpoint && currentTime != originalTime
+        
+        if ((hasTemperatureChange || hasTimeChange) && !hasChanges) {
             hasChanges = true
             binding.saveText.visibility = View.VISIBLE
-        } else if (currentTemperature == originalTemperature && hasChanges) {
+        } else if (!hasTemperatureChange && !hasTimeChange && hasChanges) {
             hasChanges = false
             binding.saveText.visibility = View.GONE
         }
@@ -156,6 +230,8 @@ class SwitchpointEditorActivity : AppCompatActivity() {
     private fun saveAndFinish() {
         val resultIntent = intent.apply {
             putExtra(EXTRA_TEMPERATURE, currentTemperature)
+            putExtra(EXTRA_TIME, currentTime)
+            putExtra(EXTRA_IS_NEW, isNewSwitchpoint)
         }
         setResult(RESULT_OK, resultIntent)
         finish()

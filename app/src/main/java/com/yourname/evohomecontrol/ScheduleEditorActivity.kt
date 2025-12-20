@@ -48,26 +48,40 @@ class ScheduleEditorActivity : AppCompatActivity() {
             val data = result.data
             val position = data?.getIntExtra(SwitchpointEditorActivity.EXTRA_POSITION, -1) ?: -1
             val delete = data?.getBooleanExtra("delete", false) ?: false
+            val isNew = data?.getBooleanExtra(SwitchpointEditorActivity.EXTRA_IS_NEW, false) ?: false
             
-            if (position >= 0) {
-                val switchpoints = schedule[currentDay] ?: return@registerForActivityResult
+            val switchpoints = schedule[currentDay] ?: return@registerForActivityResult
+            
+            if (delete && position >= 0) {
+                // Delete existing switchpoint
                 val sortedList = switchpoints.sortedBy { it.timeOfDay }
+                switchpoints.remove(sortedList[position])
+                markAsModified()
+                updateUI()
+                Toast.makeText(this, "Switchpoint deleted", Toast.LENGTH_SHORT).show()
+            } else if (isNew) {
+                // Add new switchpoint
+                val newTemp = data?.getDoubleExtra(SwitchpointEditorActivity.EXTRA_TEMPERATURE, 20.0) ?: 20.0
+                val newTime = data?.getStringExtra(SwitchpointEditorActivity.EXTRA_TIME) ?: "00:00"
                 
-                if (delete) {
-                    // Delete the switchpoint
-                    switchpoints.remove(sortedList[position])
-                    markAsModified()
-                    updateUI()
-                    Toast.makeText(this, "Switchpoint deleted", Toast.LENGTH_SHORT).show()
+                // Check if time already exists
+                if (switchpoints.any { it.timeOfDay == newTime }) {
+                    Toast.makeText(this, "A switchpoint already exists at this time", Toast.LENGTH_SHORT).show()
                 } else {
-                    // Update the temperature
-                    val newTemp = data?.getDoubleExtra(SwitchpointEditorActivity.EXTRA_TEMPERATURE, 0.0) ?: 0.0
-                    val oldSwitchpoint = sortedList[position]
-                    switchpoints.remove(oldSwitchpoint)
-                    switchpoints.add(Switchpoint(newTemp, oldSwitchpoint.timeOfDay))
+                    switchpoints.add(Switchpoint(newTemp, newTime))
                     markAsModified()
                     updateUI()
+                    Toast.makeText(this, "Switchpoint added", Toast.LENGTH_SHORT).show()
                 }
+            } else if (position >= 0) {
+                // Update existing switchpoint temperature
+                val newTemp = data?.getDoubleExtra(SwitchpointEditorActivity.EXTRA_TEMPERATURE, 0.0) ?: 0.0
+                val sortedList = switchpoints.sortedBy { it.timeOfDay }
+                val oldSwitchpoint = sortedList[position]
+                switchpoints.remove(oldSwitchpoint)
+                switchpoints.add(Switchpoint(newTemp, oldSwitchpoint.timeOfDay))
+                markAsModified()
+                updateUI()
             }
         }
     }
@@ -213,50 +227,27 @@ class ScheduleEditorActivity : AppCompatActivity() {
     }
 
     private fun showAddSwitchpointDialog() {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_edit_switchpoint, null)
-        val timeInput = dialogView.findViewById<TextInputEditText>(R.id.timeInput)
-        val tempInput = dialogView.findViewById<TextInputEditText>(R.id.tempInput)
-        val chipGroup = dialogView.findViewById<com.google.android.material.chip.ChipGroup>(R.id.temperatureChipGroup)
-
-        timeInput.setOnClickListener {
-            showTimePicker { time ->
-                timeInput.setText(time)
-            }
+        // Determine a default time (current hour rounded to nearest 30 minutes or next available time)
+        val calendar = Calendar.getInstance()
+        val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
+        val currentMinute = calendar.get(Calendar.MINUTE)
+        
+        // Round to next 30-minute interval
+        val defaultTime = if (currentMinute < 30) {
+            String.format("%02d:30", currentHour)
+        } else {
+            String.format("%02d:00", (currentHour + 1) % 24)
         }
-
-        // Handle temperature preset chips
-        chipGroup.setOnCheckedChangeListener { group, checkedId ->
-            when (checkedId) {
-                R.id.chip16 -> tempInput.setText("16.0")
-                R.id.chip17 -> tempInput.setText("17.0")
-                R.id.chip18 -> tempInput.setText("18.0")
-                R.id.chip19 -> tempInput.setText("19.0")
-                R.id.chip20 -> tempInput.setText("20.0")
-                R.id.chip21 -> tempInput.setText("21.0")
-            }
+        
+        // Launch the full-screen switchpoint editor in "add mode"
+        val intent = Intent(this, SwitchpointEditorActivity::class.java).apply {
+            putExtra(SwitchpointEditorActivity.EXTRA_TEMPERATURE, 20.0) // Default temperature
+            putExtra(SwitchpointEditorActivity.EXTRA_TIME, defaultTime)
+            putExtra(SwitchpointEditorActivity.EXTRA_POSITION, -1) // -1 indicates new switchpoint
+            putExtra(SwitchpointEditorActivity.EXTRA_IS_NEW, true) // Flag for new switchpoint
         }
-
-        MaterialAlertDialogBuilder(this)
-            .setTitle("Add Switchpoint")
-            .setView(dialogView)
-            .setPositiveButton("Add") { _, _ ->
-                val time = timeInput.text.toString()
-                val temp = tempInput.text.toString().toDoubleOrNull()
-
-                if (time.isNotEmpty() && temp != null) {
-                    if (temp < 5.0 || temp > 35.0) {
-                        Toast.makeText(this, "Temperature must be between 5°C and 35°C", Toast.LENGTH_SHORT).show()
-                    } else if (!isValidTimeFormat(time)) {
-                        Toast.makeText(this, "Please use HH:MM format (e.g., 06:30)", Toast.LENGTH_SHORT).show()
-                    } else {
-                        addSwitchpoint(time, temp)
-                    }
-                } else {
-                    Toast.makeText(this, "Please enter valid time and temperature", Toast.LENGTH_SHORT).show()
-                }
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+        
+        switchpointEditorLauncher.launch(intent)
     }
 
     private fun isValidTimeFormat(time: String): Boolean {
