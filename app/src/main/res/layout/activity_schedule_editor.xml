@@ -25,7 +25,7 @@
             android:id="@+id/dayTabs"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:background="?attr/colorPrimary"
+            android:background="@color/background_dark_bar"
             app:tabMode="scrollable"
             app:tabIndicatorColor="@android:color/white"
             app:tabIndicatorHeight="3dp"
