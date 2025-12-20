@@ -7,90 +7,94 @@
     app:cardCornerRadius="0dp"
     app:cardElevation="4dp">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_height="wrap_content">
 
-        <!-- TOP 75% - WHITE SECTION - CURRENT STATE -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="3"
-            android:orientation="vertical"
-            android:background="@color/background_white"
-            android:padding="16dp"
-            android:gravity="center">
+        <!-- TOP SECTION - CURRENT STATE -->
+        <TextView
+            android:id="@+id/zoneName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:text="FRONT BEDROOM"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_secondary_grey"
+            android:letterSpacing="0.05"
+            android:gravity="center"
+            android:maxLines="2"
+            android:ellipsize="end"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
 
-            <!-- Zone Name -->
-            <TextView
-                android:id="@+id/zoneName"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="FRONT BEDROOM"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_secondary_grey"
-                android:letterSpacing="0.05"
-                android:gravity="center"
-                android:maxLines="2"
-                android:ellipsize="end"/>
+        <TextView
+            android:id="@+id/currentTemp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="20.0°"
+            android:textSize="48sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary_black"
+            android:fontFamily="sans-serif-medium"
+            app:layout_constraintTop_toBottomOf="@id/zoneName"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
 
-            <!-- Current Temperature - LARGE -->
-            <TextView
-                android:id="@+id/currentTemp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="20.0°"
-                android:textSize="48sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary_black"
-                android:fontFamily="sans-serif-medium"/>
+        <TextView
+            android:id="@+id/statusIndicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="16dp"
+            android:text="FOLLOWING SCHEDULE"
+            android:textSize="9sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_secondary_grey"
+            android:letterSpacing="0.05"
+            app:layout_constraintTop_toBottomOf="@id/currentTemp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/targetSection"/>
 
-            <!-- Status Indicator -->
-            <TextView
-                android:id="@+id/statusIndicator"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="FOLLOWING SCHEDULE"
-                android:textSize="9sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_secondary_grey"
-                android:letterSpacing="0.05"/>
-
-        </LinearLayout>
-
-        <!-- BOTTOM 25% - COLORED SECTION - TARGET STATE -->
-        <LinearLayout
+        <!-- BOTTOM SECTION - COLORED TARGET STATE -->
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/targetSection"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="horizontal"
+            android:layout_height="wrap_content"
             android:background="@color/temp_cool_teal"
             android:padding="12dp"
-            android:gravity="center">
+            app:layout_constraintTop_toBottomOf="@id/statusIndicator"
+            app:layout_constraintBottom_toBottomOf="parent">
 
-            <!-- Target Temperature -->
             <TextView
                 android:id="@+id/targetTemp"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:text="18.0°"
                 android:textSize="24sp"
                 android:textStyle="bold"
                 android:textColor="@color/text_white"
-                android:gravity="center"
-                android:fontFamily="sans-serif-medium"/>
+                android:fontFamily="sans-serif-medium"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/actionsLayout"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintHorizontal_chainStyle="spread"/>
 
-            <!-- Action Icons -->
             <LinearLayout
+                android:id="@+id/actionsLayout"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                app:layout_constraintStart_toEndOf="@id/targetTemp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
 
                 <ImageButton
                     android:id="@+id/tempButton"
@@ -112,40 +116,40 @@
                     android:tint="@color/text_white"
                     android:contentDescription="Edit Schedule"
                     android:padding="4dp"/>
-
             </LinearLayout>
 
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- Heat Demand Indicator -->
+        <LinearLayout
+            android:id="@+id/heatDemandContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:orientation="horizontal"
+            android:padding="4dp"
+            android:gravity="center_vertical"
+            android:visibility="gone"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+            
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🔥"
+                android:textSize="12sp"
+                android:layout_marginEnd="2dp"/>
+            
+            <TextView
+                android:id="@+id/heatDemand"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="75%"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textColor="@color/status_active"/>
         </LinearLayout>
 
-    </LinearLayout>
-
-    <!-- Heat Demand Indicator (Hidden by default) -->
-<LinearLayout
-    android:id="@+id/heatDemandContainer"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_gravity="top|end"
-    android:layout_margin="8dp"
-    android:orientation="horizontal"
-    android:padding="4dp"
-    android:gravity="center_vertical"
-    android:visibility="gone">
-    
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="🔥"
-        android:textSize="12sp"
-        android:layout_marginEnd="2dp"/>
-    
-    <TextView
-        android:id="@+id/heatDemand"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="75%"
-        android:textSize="10sp"
-        android:textStyle="bold"
-        android:textColor="@color/status_active"/>
-</LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.cardview.widget.CardView>
