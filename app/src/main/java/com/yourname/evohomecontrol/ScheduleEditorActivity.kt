@@ -1,6 +1,8 @@
 package com.yourname.evohomecontrol
 
 import android.app.TimePickerDialog
+import android.content.Intent
+import androidx.activity.result.contract.ActivityResultContracts
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import com.google.android.material.chip.ChipGroup
@@ -26,9 +28,9 @@ import java.util.Calendar
 class ScheduleEditorActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityScheduleEditorBinding
-    private val schedule = mutableMapOf<String, MutableList<Switchpoint>>()
+    internal val schedule = mutableMapOf<String, MutableList<Switchpoint>>()
     private val daysOfWeek = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
-    private var currentDay = "Monday"
+    internal var currentDay = "Monday"
     private lateinit var adapter: SwitchpointAdapter
     private var hasUnsavedChanges = false
     
@@ -37,6 +39,38 @@ class ScheduleEditorActivity : AppCompatActivity() {
     private var zoneId: String? = null
     private var zoneName: String? = null
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
+    // Activity result launcher for switchpoint editor
+    internal val switchpointEditorLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val data = result.data
+            val position = data?.getIntExtra(SwitchpointEditorActivity.EXTRA_POSITION, -1) ?: -1
+            val delete = data?.getBooleanExtra("delete", false) ?: false
+            
+            if (position >= 0) {
+                val switchpoints = schedule[currentDay] ?: return@registerForActivityResult
+                val sortedList = switchpoints.sortedBy { it.timeOfDay }
+                
+                if (delete) {
+                    // Delete the switchpoint
+                    switchpoints.remove(sortedList[position])
+                    markAsModified()
+                    updateUI()
+                    Toast.makeText(this, "Switchpoint deleted", Toast.LENGTH_SHORT).show()
+                } else {
+                    // Update the temperature
+                    val newTemp = data?.getDoubleExtra(SwitchpointEditorActivity.EXTRA_TEMPERATURE, 0.0) ?: 0.0
+                    val oldSwitchpoint = sortedList[position]
+                    switchpoints.remove(oldSwitchpoint)
+                    switchpoints.add(Switchpoint(newTemp, oldSwitchpoint.timeOfDay))
+                    markAsModified()
+                    updateUI()
+                }
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -522,17 +556,25 @@ class SwitchpointAdapter(
         }
         
         private fun showEditOptions(position: Int) {
-            val options = arrayOf("Edit", "Delete", "Cancel")
-            MaterialAlertDialogBuilder(binding.root.context)
-                .setTitle("Switchpoint Options")
-                .setItems(options) { dialog, which ->
-                    when (which) {
-                        0 -> onEdit(position)  // Edit
-                        1 -> onDelete(position)  // Delete
-                        2 -> dialog.dismiss()  // Cancel
-                    }
-                }
-                .show()
+            // Get the activity context
+            val activity = binding.root.context as? ScheduleEditorActivity ?: return
+            
+            // Access schedule and currentDay from the activity
+            val switchpoints = activity.schedule[activity.currentDay] ?: return
+            val sortedList = switchpoints.sortedBy { it.timeOfDay }
+            
+            if (position < 0 || position >= sortedList.size) return
+            
+            val switchpoint = sortedList[position]
+            
+            // Launch the full-screen switchpoint editor
+            val intent = Intent(activity, SwitchpointEditorActivity::class.java).apply {
+                putExtra(SwitchpointEditorActivity.EXTRA_TEMPERATURE, switchpoint.temperature)
+                putExtra(SwitchpointEditorActivity.EXTRA_TIME, switchpoint.timeOfDay)
+                putExtra(SwitchpointEditorActivity.EXTRA_POSITION, position)
+            }
+            
+            activity.switchpointEditorLauncher.launch(intent)
         }
     }
 }
