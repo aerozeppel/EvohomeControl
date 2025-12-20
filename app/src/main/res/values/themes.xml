@@ -28,10 +28,4 @@
    <style name="ToolbarTheme" parent="ThemeOverlay.Material3.Dark">
        <item name="colorControlNormal">@android:color/white</item>
    </style>
-    <style name="TabTextStyle">
-        <item name="android:textSize">12sp</item>
-        <item name="android:textStyle">bold</item>
-        <item name="textAllCaps">true</item>
-        <item name="android:letterSpacing">0.1</item>
-    </style>
 </resources>

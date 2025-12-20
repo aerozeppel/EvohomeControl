@@ -1,44 +1,120 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout 
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="24dp">
 
     <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/timeInputLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Time (HH:MM)"
-        android:layout_marginBottom="16dp">
+        app:startIconDrawable="@drawable/ic_schedule"
+        app:endIconMode="clear_text"
+        app:boxBackgroundMode="outline"
+        app:boxCornerRadiusTopStart="12dp"
+        app:boxCornerRadiusTopEnd="12dp"
+        app:boxCornerRadiusBottomStart="12dp"
+        app:boxCornerRadiusBottomEnd="12dp">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/timeInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="time"/>
+            android:inputType="none"
+            android:focusable="false"
+            android:clickable="true"
+            android:textSize="16sp" />
 
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tempInputLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Temperature (°C)">
+        android:layout_marginTop="16dp"
+        android:hint="Temperature (°C)"
+        app:startIconDrawable="@drawable/ic_thermostat"
+        app:suffixText="°C"
+        app:helperText="Between 5°C and 35°C"
+        app:helperTextEnabled="true"
+        app:boxBackgroundMode="outline"
+        app:boxCornerRadiusTopStart="12dp"
+        app:boxCornerRadiusTopEnd="12dp"
+        app:boxCornerRadiusBottomStart="12dp"
+        app:boxCornerRadiusBottomEnd="12dp">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/tempInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="numberDecimal"/>
+            android:inputType="numberDecimal"
+            android:textSize="16sp" />
 
     </com.google.android.material.textfield.TextInputLayout>
 
     <TextView
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="Time format: HH:MM (e.g., 06:30, 18:00)"
+        android:text="Quick Presets"
+        android:textColor="#757575"
         android:textSize="12sp"
-        android:textColor="?android:attr/textColorSecondary"/>
+        android:textStyle="bold" />
+
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/temperatureChipGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        app:singleSelection="false"
+        app:chipSpacingHorizontal="8dp">
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip16"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="16°C" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip17"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="17°C" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip18"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="18°C" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip19"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="19°C" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip20"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="20°C" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip21"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="21°C" />
+
+    </com.google.android.material.chip.ChipGroup>
 
 </LinearLayout>

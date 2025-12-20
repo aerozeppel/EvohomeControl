@@ -1,21 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Primary Brand Color - Red -->
-    <color name="evohome_red">#D32F2F</color>
-    <color name="evohome_red_dark">#B71C1C</color>
+    <!-- Primary Brand Color - Red (Updated to match official app) -->
+    <color name="evohome_red">#E63946</color>
+    <color name="evohome_red_dark">#D62828</color>
     
-    <!-- Temperature Colors -->
-    <color name="temp_warm_orange">#FF6B35</color>
-    <color name="temp_cool_teal">#00897B</color>
+    <!-- Temperature Colors (Updated for schedule items) -->
+    <color name="temp_warm_orange">#E8734E</color>
+    <color name="temp_standard_teal">#3D9B8F</color>
+    <color name="temp_cool_teal">#5BA8B8</color>
     <color name="temp_eco_green">#43A047</color>
     
     <!-- Background Colors -->
-    <color name="background_light">#F5F5F5</color>
+    <color name="background_light">#E8E8E8</color>
     <color name="background_white">#FFFFFF</color>
     <color name="background_dark_bar">#424242</color>
+    <color name="switchpoint_time_bg">#FFFFFF</color>
     
     <!-- Text Colors -->
-    <color name="text_primary_black">#212121</color>
+    <color name="text_primary_black">#2C2C2C</color>
     <color name="text_secondary_grey">#757575</color>
     <color name="text_white">#FFFFFF</color>
     

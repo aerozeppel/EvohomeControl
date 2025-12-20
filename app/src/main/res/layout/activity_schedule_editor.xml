@@ -4,120 +4,195 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?android:attr/colorBackground">
+    android:background="#E8E8E8">
 
     <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/evohome_red">
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+        app:elevation="0dp">
 
-        <androidx.appcompat.widget.Toolbar
+        <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:background="@color/evohome_red"
-            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
             app:titleTextColor="@android:color/white"
-            app:title=""/>
+            app:navigationIcon="@drawable/ic_arrow_back" />
 
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/dayTabs"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:background="@color/evohome_red"
+            android:background="?attr/colorPrimary"
             app:tabMode="scrollable"
-            app:tabTextColor="#CCFFFFFF"
-            app:tabSelectedTextColor="@android:color/white"
             app:tabIndicatorColor="@android:color/white"
             app:tabIndicatorHeight="3dp"
-            app:tabTextAppearance="@style/TabTextStyle"/>
+            app:tabTextColor="#B3FFFFFF"
+            app:tabSelectedTextColor="@android:color/white"
+            app:tabTextAppearance="@style/TabTextStyle" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="?android:attr/colorBackground"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="8dp">
+            android:padding="16dp">
 
-            <!-- Empty State -->
-            <TextView
-                android:id="@+id/emptyStateText"
+            <LinearLayout
+                android:id="@+id/emptyStateLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="No switchpoints for this day.\nTap + to add one."
-                android:textAlignment="center"
-                android:textSize="16sp"
-                android:padding="32dp"
-                android:textColor="?android:attr/textColorSecondary"
-                android:visibility="gone"/>
+                android:layout_marginTop="64dp"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:visibility="gone">
 
-            <!-- Switchpoints List -->
+                <ImageView
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:src="@drawable/ic_schedule"
+                    android:tint="#BDBDBD"
+                    android:contentDescription="No schedule" />
+
+                <TextView
+                    android:id="@+id/emptyStateText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="No switchpoints for this day"
+                    android:textColor="#757575"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Tap + to add your first switchpoint"
+                    android:textColor="#BDBDBD"
+                    android:textSize="14sp" />
+
+            </LinearLayout>
+
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/switchpointsRecyclerView"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
-
-            <!-- Action Buttons -->
-            <LinearLayout
-                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="16dp"
-                android:gravity="center">
-
-                <com.google.android.material.floatingactionbutton.FloatingActionButton
-                    android:id="@+id/addSwitchpointButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="8dp"
-                    android:src="@android:drawable/ic_input_add"
-                    app:fabSize="normal"
-                    app:backgroundTint="?attr/colorPrimary"/>
-
-                <Button
-                    android:id="@+id/copyDayButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="8dp"
-                    android:text="Copy Day"
-                    style="@style/Widget.Material3.Button.TonalButton"/>
-
-                <Button
-                    android:id="@+id/saveButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="8dp"
-                    android:text="Save Schedule"
-                    android:enabled="false"
-                    android:alpha="0.5"
-                    android:backgroundTint="#4CAF50"/>
-
-            </LinearLayout>
+                android:clipToPadding="false"
+                android:paddingBottom="80dp" />
 
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Loading Overlay -->
+    <com.google.android.material.bottomappbar.BottomAppBar
+        android:id="@+id/bottomAppBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        app:fabCradleMargin="8dp"
+        app:fabCradleRoundedCornerRadius="16dp"
+        app:fabAlignmentMode="center">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp">
+
+            <LinearLayout
+                android:id="@+id/copyDayButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="8dp">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_content_copy"
+                    android:tint="?attr/colorOnSurface" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Copy Day"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
+            <View
+                android:layout_width="56dp"
+                android:layout_height="1dp" />
+
+            <LinearLayout
+                android:id="@+id/saveButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="8dp"
+                android:enabled="false">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_save"
+                    android:tint="?attr/colorOnSurface" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Save"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </com.google.android.material.bottomappbar.BottomAppBar>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/addSwitchpointButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_add"
+        android:contentDescription="Add switchpoint"
+        app:layout_anchor="@id/bottomAppBar" />
+
     <FrameLayout
         android:id="@+id/loadingOverlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#80000000"
-        android:visibility="gone"
-        android:clickable="true">
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone">
 
         <ProgressBar
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"/>
+            android:layout_gravity="center"
+            android:indeterminateTint="@android:color/white" />
 
     </FrameLayout>
 

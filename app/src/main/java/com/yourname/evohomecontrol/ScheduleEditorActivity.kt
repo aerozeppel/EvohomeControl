@@ -2,6 +2,8 @@ package com.yourname.evohomecontrol
 
 import android.app.TimePickerDialog
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
+import com.google.android.material.chip.ChipGroup
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -154,23 +156,23 @@ class ScheduleEditorActivity : AppCompatActivity() {
             showAddSwitchpointDialog()
         }
 
-        binding.copyDayButton.setOnClickListener {
+        binding.bottomAppBar.findViewById<View>(R.id.copyDayButton).setOnClickListener {
             showCopyDayDialog()
         }
 
-        binding.saveButton.setOnClickListener {
+        binding.bottomAppBar.findViewById<View>(R.id.saveButton).setOnClickListener {
             saveSchedule()
         }
     }
 
     private fun updateUI() {
         val switchpoints = schedule[currentDay] ?: mutableListOf()
-        
+    
         if (switchpoints.isEmpty()) {
-            binding.emptyStateText.visibility = View.VISIBLE
+            binding.emptyStateLayout.visibility = View.VISIBLE
             binding.switchpointsRecyclerView.visibility = View.GONE
         } else {
-            binding.emptyStateText.visibility = View.GONE
+            binding.emptyStateLayout.visibility = View.GONE
             binding.switchpointsRecyclerView.visibility = View.VISIBLE
             adapter.submitList(switchpoints.sortedBy { it.timeOfDay })
         }
@@ -180,10 +182,23 @@ class ScheduleEditorActivity : AppCompatActivity() {
         val dialogView = layoutInflater.inflate(R.layout.dialog_edit_switchpoint, null)
         val timeInput = dialogView.findViewById<TextInputEditText>(R.id.timeInput)
         val tempInput = dialogView.findViewById<TextInputEditText>(R.id.tempInput)
+        val chipGroup = dialogView.findViewById<com.google.android.material.chip.ChipGroup>(R.id.temperatureChipGroup)
 
         timeInput.setOnClickListener {
             showTimePicker { time ->
                 timeInput.setText(time)
+            }
+        }
+
+        // Handle temperature preset chips
+        chipGroup.setOnCheckedChangeListener { group, checkedId ->
+            when (checkedId) {
+                R.id.chip16 -> tempInput.setText("16.0")
+                R.id.chip17 -> tempInput.setText("17.0")
+                R.id.chip18 -> tempInput.setText("18.0")
+                R.id.chip19 -> tempInput.setText("19.0")
+                R.id.chip20 -> tempInput.setText("20.0")
+                R.id.chip21 -> tempInput.setText("21.0")
             }
         }
 
@@ -254,6 +269,7 @@ class ScheduleEditorActivity : AppCompatActivity() {
         val dialogView = layoutInflater.inflate(R.layout.dialog_edit_switchpoint, null)
         val timeInput = dialogView.findViewById<TextInputEditText>(R.id.timeInput)
         val tempInput = dialogView.findViewById<TextInputEditText>(R.id.tempInput)
+        val chipGroup = dialogView.findViewById<com.google.android.material.chip.ChipGroup>(R.id.temperatureChipGroup)
 
         timeInput.setText(switchpoint.timeOfDay)
         tempInput.setText(switchpoint.temperature.toString())
@@ -261,6 +277,18 @@ class ScheduleEditorActivity : AppCompatActivity() {
         timeInput.setOnClickListener {
             showTimePicker { time ->
                 timeInput.setText(time)
+            }
+        }
+
+        // Handle temperature preset chips
+        chipGroup.setOnCheckedChangeListener { group, checkedId ->
+            when (checkedId) {
+                R.id.chip16 -> tempInput.setText("16.0")
+                R.id.chip17 -> tempInput.setText("17.0")
+                R.id.chip18 -> tempInput.setText("18.0")
+                R.id.chip19 -> tempInput.setText("19.0")
+                R.id.chip20 -> tempInput.setText("20.0")
+                R.id.chip21 -> tempInput.setText("21.0")
             }
         }
 
@@ -277,7 +305,6 @@ class ScheduleEditorActivity : AppCompatActivity() {
                     } else if (!isValidTimeFormat(time)) {
                         Toast.makeText(this, "Please use HH:MM format (e.g., 06:30)", Toast.LENGTH_SHORT).show()
                     } else {
-                        // Remove old switchpoint and add updated one
                         switchpoints.remove(switchpoint)
                         switchpoints.add(Switchpoint(temp, time))
                         markAsModified()
@@ -340,8 +367,9 @@ class ScheduleEditorActivity : AppCompatActivity() {
 
     private fun markAsModified() {
         hasUnsavedChanges = true
-        binding.saveButton.isEnabled = true
-        binding.saveButton.alpha = 1.0f
+        val saveButton = binding.bottomAppBar.findViewById<View>(R.id.saveButton)
+        saveButton.isEnabled = true
+        saveButton.alpha = 1.0f
     }
 
     private fun saveSchedule() {
@@ -377,7 +405,12 @@ class ScheduleEditorActivity : AppCompatActivity() {
 
                 binding.loadingOverlay.visibility = View.GONE
                 hasUnsavedChanges = false
-                binding.saveButton.alpha = 0.5f
+
+                // Reset save button state
+                val saveButton = binding.bottomAppBar.findViewById<View>(R.id.saveButton)
+                saveButton.alpha = 0.5f
+                saveButton.isEnabled = false
+
                 Toast.makeText(this@ScheduleEditorActivity, "Schedule saved successfully!", Toast.LENGTH_SHORT).show()
 
             } catch (e: Exception) {
@@ -471,21 +504,35 @@ class SwitchpointAdapter(
             binding.timeText.text = switchpoint.timeOfDay
             binding.temperatureText.text = "${tempFormat.format(switchpoint.temperature)}°"
 
-            // Color the temperature block based on value
+            // Use official Evohome teal/green color for temperature block
+            // You can adjust this based on temperature if desired
             val tempColor = when {
-                switchpoint.temperature >= 20.0 -> Color.parseColor("#FF6B35") // Warm Orange
-                switchpoint.temperature >= 18.0 -> Color.parseColor("#FFA726") // Medium Orange
-                else -> Color.parseColor("#00897B") // Cool Teal
+                switchpoint.temperature >= 20.0 -> Color.parseColor("#E8734E") // Warmer teal-orange
+                switchpoint.temperature >= 18.0 -> Color.parseColor("#3D9B8F") // Standard teal
+                switchpoint.temperature >= 16.0 -> Color.parseColor("#3D9B8F") // Standard teal
+                else -> Color.parseColor("#5BA8B8") // Cooler blue-teal
             }
-            binding.tempBlock.setBackgroundColor(tempColor)
+            
+            binding.temperatureText.setBackgroundColor(tempColor)
 
-            binding.editButton.setOnClickListener {
-                onEdit(position)
+            // Make the entire item tappable - opens edit dialog
+            binding.switchpointContainer.setOnClickListener {
+                showEditOptions(position)
             }
-
-            binding.deleteButton.setOnClickListener {
-                onDelete(position)
-            }
+        }
+        
+        private fun showEditOptions(position: Int) {
+            val options = arrayOf("Edit", "Delete", "Cancel")
+            MaterialAlertDialogBuilder(binding.root.context)
+                .setTitle("Switchpoint Options")
+                .setItems(options) { dialog, which ->
+                    when (which) {
+                        0 -> onEdit(position)  // Edit
+                        1 -> onDelete(position)  // Delete
+                        2 -> dialog.dismiss()  // Cancel
+                    }
+                }
+                .show()
         }
     }
 }

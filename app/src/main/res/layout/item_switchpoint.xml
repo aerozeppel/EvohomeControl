@@ -1,74 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/switchpointContainer"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginStart="16dp"
+    android:layout_marginEnd="16dp"
+    android:layout_marginBottom="8dp"
     android:orientation="vertical"
-    android:layout_marginBottom="2dp">
+    android:background="@drawable/switchpoint_background"
+    android:clickable="true"
+    android:focusable="true">
 
-    <!-- TIME BLOCK - GREY -->
-    <LinearLayout
+    <!-- Time Block (White/Light Gray Background) -->
+    <TextView
+        android:id="@+id/timeText"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:background="#EEEEEE"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingStart="24dp"
-        android:paddingEnd="24dp">
-
-        <TextView
-            android:id="@+id/timeText"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="08:00"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:textColor="@color/text_primary_black"
-            android:fontFamily="sans-serif-medium"/>
-
-        <ImageButton
-            android:id="@+id/editButton"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@android:drawable/ic_menu_edit"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:tint="@color/text_secondary_grey"
-            android:contentDescription="Edit"
-            android:padding="8dp"/>
-
-        <ImageButton
-            android:id="@+id/deleteButton"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@android:drawable/ic_menu_delete"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:tint="@color/evohome_red"
-            android:contentDescription="Delete"
-            android:padding="8dp"/>
-
-    </LinearLayout>
-
-    <!-- TEMPERATURE BLOCK - COLORED -->
-    <LinearLayout
-        android:id="@+id/tempBlock"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:background="@color/temp_warm_orange"
+        android:layout_height="wrap_content"
+        android:background="#FFFFFF"
         android:gravity="center"
-        android:paddingStart="24dp"
-        android:paddingEnd="24dp">
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        android:text="07:40"
+        android:textColor="#2C2C2C"
+        android:textSize="24sp"
+        android:textStyle="normal" />
 
-        <TextView
-            android:id="@+id/temperatureText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="19.5°"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:textColor="@color/text_white"
-            android:fontFamily="sans-serif-medium"/>
-
-    </LinearLayout>
+    <!-- Temperature Block (Teal/Green Background) -->
+    <TextView
+        android:id="@+id/temperatureText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#3D9B8F"
+        android:gravity="center"
+        android:paddingTop="20dp"
+        android:paddingBottom="20dp"
+        android:text="18.5°"
+        android:textColor="#FFFFFF"
+        android:textSize="28sp"
+        android:textStyle="bold" />
 
 </LinearLayout>
