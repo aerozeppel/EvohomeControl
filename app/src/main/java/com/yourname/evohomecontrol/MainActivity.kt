@@ -29,6 +29,7 @@ import com.yourname.evohomecontrol.api.Zone
 import com.yourname.evohomecontrol.databinding.ActivityMainBinding
 import com.yourname.evohomecontrol.widget.EvohomeWidget
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -634,9 +635,6 @@ private fun openScheduleEditor(zone: Zone) {
 
         lifecycleScope.launch {
             try {
-                var successCount = 0
-                var failCount = 0
-
                 // Calculate end time
                 val calendar = Calendar.getInstance()
                 calendar.add(Calendar.MINUTE, durationMinutes)
@@ -644,43 +642,46 @@ private fun openScheduleEditor(zone: Zone) {
                     timeZone = TimeZone.getTimeZone("UTC")
                 }.format(calendar.time)
 
-                // Apply to all zones
-                for (zone in allZones) {
-                    try {
-                        // Set temperature based on zone name
-                        val targetTemp = if (zone.name.equals("Kitchen", ignoreCase = true)) {
-                            17.5
-                        } else {
-                            18.5
+                // Create a list of deferred tasks
+                val tasks = allZones.map { zone ->
+                    async {
+                        try {
+                            // Set temperature based on zone name
+                            val targetTemp = if (zone.name.equals("Kitchen", ignoreCase = true)) {
+                                17.5
+                            } else {
+                                18.5
+                            }
+
+                            val setpoint = HeatSetpoint(
+                                HeatSetpointValue = targetTemp,
+                                SetpointMode = 2, // Temporary override
+                                TimeUntil = timeUntil
+                            )
+
+                            val response = EvohomeApiClient.apiService.setTemperature(
+                                zoneId = zone.zoneId,
+                                auth = "bearer $accessToken",
+                                setpoint = setpoint
+                            )
+                            
+                            if (response.isSuccessful) {
+                                true // Success
+                            } else {
+                                Log.e("AwayMode", "Failed to set ${zone.name}: ${response.code()}")
+                                false // Failure
+                            }
+                        } catch (e: Exception) {
+                            Log.e("AwayMode", "Error setting ${zone.name}: ${e.message}")
+                            false // Failure
                         }
-
-                        val setpoint = HeatSetpoint(
-                            HeatSetpointValue = targetTemp,
-                            SetpointMode = 2, // Temporary override
-                            TimeUntil = timeUntil
-                        )
-
-                        val response = EvohomeApiClient.apiService.setTemperature(
-                            zoneId = zone.zoneId,
-                            auth = "bearer $accessToken",
-                            setpoint = setpoint
-                        )
-
-                        if (response.isSuccessful) {
-                            successCount++
-                        } else {
-                            failCount++
-                            Log.e("AwayMode", "Failed to set ${zone.name}: ${response.code()}")
-                        }
-
-                        // Small delay between API calls to avoid rate limiting
-                        delay(200)
-
-                    } catch (e: Exception) {
-                        failCount++
-                        Log.e("AwayMode", "Error setting ${zone.name}: ${e.message}")
                     }
                 }
+
+                // Await all results
+                val results = tasks.map { it.await() }
+                val successCount = results.count { it }
+                val failCount = results.count { !it }
 
                 showLoading(false)
 
@@ -727,39 +728,39 @@ private fun openScheduleEditor(zone: Zone) {
 
                 lifecycleScope.launch {
                     try {
-                        var successCount = 0
-                        var failCount = 0
+                        // Create a list of deferred tasks
+                        val tasks = allZones.map { zone ->
+                            async {
+                                try {
+                                    val setpoint = HeatSetpoint(
+                                        HeatSetpointValue = 0.0,
+                                        SetpointMode = 0, // Follow schedule
+                                        TimeUntil = null
+                                    )
 
-                        // Cancel override for all zones
-                        for (zone in allZones) {
-                            try {
-                                val setpoint = HeatSetpoint(
-                                    HeatSetpointValue = 0.0,
-                                    SetpointMode = 0, // Follow schedule
-                                    TimeUntil = null
-                                )
+                                    val response = EvohomeApiClient.apiService.setTemperature(
+                                        zoneId = zone.zoneId,
+                                        auth = "bearer $accessToken",
+                                        setpoint = setpoint
+                                    )
 
-                                val response = EvohomeApiClient.apiService.setTemperature(
-                                    zoneId = zone.zoneId,
-                                    auth = "bearer $accessToken",
-                                    setpoint = setpoint
-                                )
-
-                                if (response.isSuccessful) {
-                                    successCount++
-                                } else {
-                                    failCount++
-                                    Log.e("CancelOverrides", "Failed to cancel ${zone.name}: ${response.code()}")
+                                    if (response.isSuccessful) {
+                                        true // Success
+                                    } else {
+                                        Log.e("CancelOverrides", "Failed to cancel ${zone.name}: ${response.code()}")
+                                        false // Failure
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("CancelOverrides", "Error canceling ${zone.name}: ${e.message}")
+                                    false // Failure
                                 }
-
-                                // Small delay between API calls
-                                delay(200)
-
-                            } catch (e: Exception) {
-                                failCount++
-                                Log.e("CancelOverrides", "Error canceling ${zone.name}: ${e.message}")
                             }
                         }
+
+                        // Await all results
+                        val results = tasks.map { it.await() }
+                        val successCount = results.count { it }
+                        val failCount = results.count { !it }
 
                         showLoading(false)
 
