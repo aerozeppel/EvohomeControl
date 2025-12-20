@@ -6,7 +6,7 @@
     android:layout_height="wrap_content"
     android:layout_marginStart="16dp"
     android:layout_marginEnd="16dp"
-    android:layout_marginBottom="6dp"
+    android:layout_marginBottom="3dp"
     android:orientation="vertical"
     android:background="@drawable/switchpoint_background"
     android:clickable="true"
@@ -20,11 +20,11 @@
         android:layout_height="wrap_content"
         android:background="@color/switchpoint_time_bg"
         android:gravity="center"
-        android:paddingTop="14dp"
-        android:paddingBottom="14dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
         android:text="07:40"
         android:textColor="@color/text_primary_black"
-        android:textSize="22sp"
+        android:textSize="19sp"
         android:fontFamily="sans-serif" />
 
     <!-- Temperature Block (Teal Background) -->
@@ -34,11 +34,11 @@
         android:layout_height="wrap_content"
         android:background="@color/temp_standard_teal"
         android:gravity="center"
-        android:paddingTop="16dp"
-        android:paddingBottom="16dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
         android:text="18.5°"
         android:textColor="@color/text_white"
-        android:textSize="26sp"
+        android:textSize="23sp"
         android:textStyle="bold"
         android:fontFamily="sans-serif" />
 
