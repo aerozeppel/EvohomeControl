@@ -1,5 +1,7 @@
 package com.yourname.evohomecontrol.api
 
+import com.google.gson.annotations.SerializedName
+
 // Authentication Response
 data class TokenResponse(
     val access_token: String,
@@ -74,7 +76,7 @@ data class HeatDemand(
     val isActive: Boolean = false  // Derived: true if demandPercentage > 0
 )
 
-// Zone Schedule
+// Zone Schedule (for both read and write)
 data class ZoneSchedule(
     val dailySchedules: List<DailySchedule>
 )
@@ -84,8 +86,15 @@ data class DailySchedule(
     val switchpoints: List<Switchpoint>
 )
 
+// Switchpoint with dual serialization support
+// The API uses different field names for GET vs PUT operations:
+// - GET returns: "temperature" and "timeOfDay" (lowercase)
+// - PUT expects: "TargetTemperature" and "TimeOfDay" (PascalCase)
 data class Switchpoint(
+    @SerializedName(value = "TargetTemperature", alternate = ["temperature"])
     val temperature: Double,
+    
+    @SerializedName(value = "TimeOfDay", alternate = ["timeOfDay"])
     val timeOfDay: String
 )
 

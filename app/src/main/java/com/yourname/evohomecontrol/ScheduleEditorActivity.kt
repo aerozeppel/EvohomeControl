@@ -359,7 +359,7 @@ class ScheduleEditorActivity : AppCompatActivity() {
                 val dailySchedules = daysOfWeek.map { day ->
                     DailySchedule(
                         dayOfWeek = day,
-                        switchpoints = schedule[day] ?: emptyList()
+                        switchpoints = (schedule[day] ?: emptyList()).sortedBy { it.timeOfDay }
                     )
                 }
 
