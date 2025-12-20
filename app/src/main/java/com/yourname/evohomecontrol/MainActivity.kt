@@ -314,13 +314,18 @@ private fun openScheduleEditor(zone: Zone) {
                 durationDisplay.text = "Permanent"
                 durationSubtext.text = "Until manually changed"
             } else {
-                val hours = currentDurationMinutes / 60
-                val minutes = currentDurationMinutes % 60
+                if (currentDurationMinutes >= 1440) {
+                    val days = currentDurationMinutes / 1440
+                    durationDisplay.text = "$days days"
+                } else {
+                    val hours = currentDurationMinutes / 60
+                    val minutes = currentDurationMinutes % 60
 
-                durationDisplay.text = when {
-                    hours > 0 && minutes > 0 -> "${hours}h ${minutes}m"
-                    hours > 0 -> "${hours}h"
-                    else -> "${minutes}m"
+                    durationDisplay.text = when {
+                        hours > 0 && minutes > 0 -> "${hours}h ${minutes}m"
+                        hours > 0 -> "${hours}h"
+                        else -> "${minutes}m"
+                    }
                 }
 
                 // Calculate end time
@@ -348,16 +353,30 @@ private fun openScheduleEditor(zone: Zone) {
 
         // Duration controls
         durationMinus.setOnClickListener {
-            if (!isPermanent && currentDurationMinutes > 30) {
-                currentDurationMinutes -= 30
+            if (!isPermanent && currentDurationMinutes > 15) {
+                val step = when {
+                    currentDurationMinutes <= 60 -> 15
+                    currentDurationMinutes <= 180 -> 30
+                    currentDurationMinutes <= 720 -> 60
+                    currentDurationMinutes <= 1440 -> 720
+                    else -> 1440
+                }
+                currentDurationMinutes -= step
                 updateDurationDisplay()
             }
         }
 
         durationPlus.setOnClickListener {
             if (!isPermanent) {
-                if (currentDurationMinutes < 1440) { // Max 24 hours
-                    currentDurationMinutes += 30
+                val step = when {
+                    currentDurationMinutes < 60 -> 15
+                    currentDurationMinutes < 180 -> 30
+                    currentDurationMinutes < 720 -> 60
+                    currentDurationMinutes < 1440 -> 720
+                    else -> 1440
+                }
+                if (currentDurationMinutes + step <= 10080) { // Max 7 days
+                    currentDurationMinutes += step
                     updateDurationDisplay()
                 }
             }
