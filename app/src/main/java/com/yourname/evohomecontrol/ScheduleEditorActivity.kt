@@ -20,6 +20,8 @@ import com.google.android.material.textfield.TextInputEditText
 import com.yourname.evohomecontrol.api.*
 import com.yourname.evohomecontrol.databinding.ActivityScheduleEditorBinding
 import com.yourname.evohomecontrol.databinding.ItemSwitchpointBinding
+import androidx.viewpager2.widget.ViewPager2
+import com.yourname.evohomecontrol.databinding.PageDayScheduleBinding
 import kotlinx.coroutines.*
 import retrofit2.HttpException
 import java.text.DecimalFormat
@@ -31,7 +33,8 @@ class ScheduleEditorActivity : AppCompatActivity() {
     internal val schedule = mutableMapOf<String, MutableList<Switchpoint>>()
     private val daysOfWeek = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
     internal var currentDay = "Monday"
-    private lateinit var adapter: SwitchpointAdapter
+    private val dayAdapters = mutableMapOf<String, SwitchpointAdapter>()
+    private lateinit var viewPagerAdapter: DayPagerAdapter
     private var hasUnsavedChanges = false
     
     // API related
@@ -110,7 +113,7 @@ class ScheduleEditorActivity : AppCompatActivity() {
         currentDay = daysOfWeek[todayIndex]
 
         setupTabs()
-        setupRecyclerView()
+        setupViewPager()
         setupButtons()
         
         // Load schedule from API
@@ -181,7 +184,7 @@ class ScheduleEditorActivity : AppCompatActivity() {
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 tab?.let {
                     currentDay = daysOfWeek[it.position]
-                    updateUI()
+                    binding.dayViewPager.setCurrentItem(it.position, true)
                 }
             }
 
@@ -190,14 +193,23 @@ class ScheduleEditorActivity : AppCompatActivity() {
         })
     }
 
-    private fun setupRecyclerView() {
-        adapter = SwitchpointAdapter(
-            onEdit = { position -> editSwitchpoint(position) },
-            onDelete = { position -> deleteSwitchpoint(position) }
-        )
-        binding.switchpointsRecyclerView.layoutManager = LinearLayoutManager(this)
-        binding.switchpointsRecyclerView.adapter = adapter
-    }
+    private fun setupViewPager() {
+    viewPagerAdapter = DayPagerAdapter()
+    binding.dayViewPager.adapter = viewPagerAdapter
+    
+    // Set initial page to today
+    val todayIndex = daysOfWeek.indexOf(currentDay)
+    binding.dayViewPager.setCurrentItem(todayIndex, false)
+    
+    // Listen for page changes
+    binding.dayViewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+        override fun onPageSelected(position: Int) {
+            super.onPageSelected(position)
+            currentDay = daysOfWeek[position]
+            binding.dayTabs.getTabAt(position)?.select()
+        }
+    })
+}
 
     private fun setupButtons() {
         binding.addSwitchpointButton.setOnClickListener {
@@ -214,17 +226,16 @@ class ScheduleEditorActivity : AppCompatActivity() {
     }
 
     private fun updateUI() {
+    // Notify the adapter for the current day to refresh
+    val adapter = dayAdapters[currentDay]
+    adapter?.let {
         val switchpoints = schedule[currentDay] ?: mutableListOf()
-    
-        if (switchpoints.isEmpty()) {
-            binding.emptyStateLayout.visibility = View.VISIBLE
-            binding.switchpointsRecyclerView.visibility = View.GONE
-        } else {
-            binding.emptyStateLayout.visibility = View.GONE
-            binding.switchpointsRecyclerView.visibility = View.VISIBLE
-            adapter.submitList(switchpoints.sortedBy { it.timeOfDay })
-        }
+        it.submitList(switchpoints.sortedBy { sp -> sp.timeOfDay })
     }
+    
+    // Refresh all adapters to ensure consistency
+    viewPagerAdapter.notifyDataSetChanged()
+}
 
     private fun showAddSwitchpointDialog() {
         // Determine a default time (current hour rounded to nearest 30 minutes or next available time)
@@ -286,77 +297,76 @@ class ScheduleEditorActivity : AppCompatActivity() {
         updateUI()
     }
 
-    private fun editSwitchpoint(position: Int) {
-        val switchpoints = schedule[currentDay] ?: return
-        val sortedList = switchpoints.sortedBy { it.timeOfDay }
-        val switchpoint = sortedList[position]
+    private fun editSwitchpoint(day: String, position: Int) {
+    val switchpoints = schedule[day] ?: return
+    val sortedList = switchpoints.sortedBy { it.timeOfDay }
+    val switchpoint = sortedList[position]
 
-        val dialogView = layoutInflater.inflate(R.layout.dialog_edit_switchpoint, null)
-        val timeInput = dialogView.findViewById<TextInputEditText>(R.id.timeInput)
-        val tempInput = dialogView.findViewById<TextInputEditText>(R.id.tempInput)
-        val chipGroup = dialogView.findViewById<com.google.android.material.chip.ChipGroup>(R.id.temperatureChipGroup)
+    val dialogView = layoutInflater.inflate(R.layout.dialog_edit_switchpoint, null)
+    val timeInput = dialogView.findViewById<TextInputEditText>(R.id.timeInput)
+    val tempInput = dialogView.findViewById<TextInputEditText>(R.id.tempInput)
+    val chipGroup = dialogView.findViewById<com.google.android.material.chip.ChipGroup>(R.id.temperatureChipGroup)
 
-        timeInput.setText(switchpoint.timeOfDay)
-        tempInput.setText(switchpoint.temperature.toString())
+    timeInput.setText(switchpoint.timeOfDay)
+    tempInput.setText(switchpoint.temperature.toString())
 
-        timeInput.setOnClickListener {
-            showTimePicker { time ->
-                timeInput.setText(time)
-            }
+    timeInput.setOnClickListener {
+        showTimePicker { time ->
+            timeInput.setText(time)
         }
+    }
 
-        // Handle temperature preset chips
-        chipGroup.setOnCheckedChangeListener { group, checkedId ->
-            when (checkedId) {
-                R.id.chip16 -> tempInput.setText("16.0")
-                R.id.chip17 -> tempInput.setText("17.0")
-                R.id.chip18 -> tempInput.setText("18.0")
-                R.id.chip19 -> tempInput.setText("19.0")
-                R.id.chip20 -> tempInput.setText("20.0")
-                R.id.chip21 -> tempInput.setText("21.0")
-            }
+    chipGroup.setOnCheckedChangeListener { group, checkedId ->
+        when (checkedId) {
+            R.id.chip16 -> tempInput.setText("16.0")
+            R.id.chip17 -> tempInput.setText("17.0")
+            R.id.chip18 -> tempInput.setText("18.0")
+            R.id.chip19 -> tempInput.setText("19.0")
+            R.id.chip20 -> tempInput.setText("20.0")
+            R.id.chip21 -> tempInput.setText("21.0")
         }
+    }
 
-        MaterialAlertDialogBuilder(this)
-            .setTitle("Edit Switchpoint")
-            .setView(dialogView)
-            .setPositiveButton("Save") { _, _ ->
-                val time = timeInput.text.toString()
-                val temp = tempInput.text.toString().toDoubleOrNull()
+    MaterialAlertDialogBuilder(this)
+        .setTitle("Edit Switchpoint")
+        .setView(dialogView)
+        .setPositiveButton("Save") { _, _ ->
+            val time = timeInput.text.toString()
+            val temp = tempInput.text.toString().toDoubleOrNull()
 
-                if (time.isNotEmpty() && temp != null) {
-                    if (temp < 5.0 || temp > 35.0) {
-                        Toast.makeText(this, "Temperature must be between 5°C and 35°C", Toast.LENGTH_SHORT).show()
-                    } else if (!isValidTimeFormat(time)) {
-                        Toast.makeText(this, "Please use HH:MM format (e.g., 06:30)", Toast.LENGTH_SHORT).show()
-                    } else {
-                        switchpoints.remove(switchpoint)
-                        switchpoints.add(Switchpoint(temp, time))
-                        markAsModified()
-                        updateUI()
-                    }
+            if (time.isNotEmpty() && temp != null) {
+                if (temp < 5.0 || temp > 35.0) {
+                    Toast.makeText(this, "Temperature must be between 5°C and 35°C", Toast.LENGTH_SHORT).show()
+                } else if (!isValidTimeFormat(time)) {
+                    Toast.makeText(this, "Please use HH:MM format (e.g., 06:30)", Toast.LENGTH_SHORT).show()
+                } else {
+                    switchpoints.remove(switchpoint)
+                    switchpoints.add(Switchpoint(temp, time))
+                    markAsModified()
+                    updateUI()
                 }
             }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
+        }
+        .setNegativeButton("Cancel", null)
+        .show()
+}
 
-    private fun deleteSwitchpoint(position: Int) {
-        val switchpoints = schedule[currentDay] ?: return
-        val sortedList = switchpoints.sortedBy { it.timeOfDay }
-        val switchpoint = sortedList[position]
+private fun deleteSwitchpoint(day: String, position: Int) {
+    val switchpoints = schedule[day] ?: return
+    val sortedList = switchpoints.sortedBy { it.timeOfDay }
+    val switchpoint = sortedList[position]
 
-        MaterialAlertDialogBuilder(this)
-            .setTitle("Delete Switchpoint")
-            .setMessage("Are you sure you want to delete the switchpoint at ${switchpoint.timeOfDay}?")
-            .setPositiveButton("Delete") { _, _ ->
-                switchpoints.remove(switchpoint)
-                markAsModified()
-                updateUI()
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
+    MaterialAlertDialogBuilder(this)
+        .setTitle("Delete Switchpoint")
+        .setMessage("Are you sure you want to delete the switchpoint at ${switchpoint.timeOfDay}?")
+        .setPositiveButton("Delete") { _, _ ->
+            switchpoints.remove(switchpoint)
+            markAsModified()
+            updateUI()
+        }
+        .setNegativeButton("Cancel", null)
+        .show()
+}
 
     private fun showCopyDayDialog() {
         val currentSwitchpoints = schedule[currentDay]
@@ -491,6 +501,55 @@ class ScheduleEditorActivity : AppCompatActivity() {
         super.onDestroy()
         scope.cancel()
     }
+
+    inner class DayPagerAdapter : RecyclerView.Adapter<DayPagerAdapter.DayViewHolder>() {
+    
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DayViewHolder {
+        val binding = PageDayScheduleBinding.inflate(
+            LayoutInflater.from(parent.context),
+            parent,
+            false
+        )
+        return DayViewHolder(binding)
+    }
+    
+    override fun onBindViewHolder(holder: DayViewHolder, position: Int) {
+        holder.bind(daysOfWeek[position])
+    }
+    
+    override fun getItemCount() = daysOfWeek.size
+    
+    inner class DayViewHolder(
+        private val binding: PageDayScheduleBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
+        
+        fun bind(day: String) {
+            val switchpoints = schedule[day] ?: mutableListOf()
+            
+            // Create or get adapter for this day
+            val adapter = dayAdapters.getOrPut(day) {
+                SwitchpointAdapter(
+                    onEdit = { position -> editSwitchpoint(day, position) },
+                    onDelete = { position -> deleteSwitchpoint(day, position) }
+                )
+            }
+            
+            // Setup RecyclerView
+            binding.switchpointsRecyclerView.layoutManager = LinearLayoutManager(binding.root.context)
+            binding.switchpointsRecyclerView.adapter = adapter
+            
+            // Update UI
+            if (switchpoints.isEmpty()) {
+                binding.emptyStateLayout.visibility = View.VISIBLE
+                binding.switchpointsRecyclerView.visibility = View.GONE
+            } else {
+                binding.emptyStateLayout.visibility = View.GONE
+                binding.switchpointsRecyclerView.visibility = View.VISIBLE
+                adapter.submitList(switchpoints.sortedBy { it.timeOfDay })
+            }
+        }
+    }
+}
 }
 
 class SwitchpointAdapter(
