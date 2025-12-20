@@ -535,7 +535,11 @@ private fun deleteSwitchpoint(day: String, position: Int) {
             }
             
             // Setup RecyclerView
-            binding.switchpointsRecyclerView.layoutManager = LinearLayoutManager(binding.root.context)
+            binding.switchpointsRecyclerView.apply {
+                layoutManager = LinearLayoutManager(binding.root.context)
+                isNestedScrollingEnabled = false
+                setHasFixedSize(true)
+            }
             binding.switchpointsRecyclerView.adapter = adapter
             
             // Update UI

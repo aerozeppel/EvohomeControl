@@ -6,38 +6,40 @@
     android:layout_height="wrap_content"
     android:layout_marginStart="16dp"
     android:layout_marginEnd="16dp"
-    android:layout_marginBottom="8dp"
+    android:layout_marginBottom="6dp"
     android:orientation="vertical"
     android:background="@drawable/switchpoint_background"
     android:clickable="true"
-    android:focusable="true">
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground">
 
-    <!-- Time Block (White/Light Gray Background) -->
+    <!-- Time Block (White Background) -->
     <TextView
         android:id="@+id/timeText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#FFFFFF"
+        android:background="@color/switchpoint_time_bg"
         android:gravity="center"
-        android:paddingTop="16dp"
-        android:paddingBottom="16dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="14dp"
         android:text="07:40"
-        android:textColor="#2C2C2C"
-        android:textSize="24sp"
-        android:textStyle="normal" />
+        android:textColor="@color/text_primary_black"
+        android:textSize="22sp"
+        android:fontFamily="sans-serif" />
 
-    <!-- Temperature Block (Teal/Green Background) -->
+    <!-- Temperature Block (Teal Background) -->
     <TextView
         android:id="@+id/temperatureText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#3D9B8F"
+        android:background="@color/temp_standard_teal"
         android:gravity="center"
-        android:paddingTop="20dp"
-        android:paddingBottom="20dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
         android:text="18.5°"
-        android:textColor="#FFFFFF"
-        android:textSize="28sp"
-        android:textStyle="bold" />
+        android:textColor="@color/text_white"
+        android:textSize="26sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif" />
 
 </LinearLayout>
