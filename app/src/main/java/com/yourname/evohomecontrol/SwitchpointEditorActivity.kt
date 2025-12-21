@@ -48,13 +48,11 @@ class SwitchpointEditorActivity : AppCompatActivity() {
         updateTemperatureDisplay()
         binding.timeText.text = currentTime
 
-        // Make time clickable for new switchpoints
-        if (isNewSwitchpoint) {
-            binding.timeDisplay.setOnClickListener {
-                showTimePicker()
-            }
-            binding.timeDisplay.foreground = getDrawable(android.R.drawable.list_selector_background)
+        // Make time display clickable
+        binding.timeDisplay.setOnClickListener {
+            showTimePicker()
         }
+        binding.timeDisplay.foreground = getDrawable(android.R.drawable.list_selector_background)
 
         // Setup gesture detector for swipe up/down
         gestureDetector = GestureDetector(this, SwipeGestureListener())
@@ -196,7 +194,7 @@ class SwitchpointEditorActivity : AppCompatActivity() {
 
     private fun markAsModified() {
         val hasTemperatureChange = currentTemperature != originalTemperature
-        val hasTimeChange = isNewSwitchpoint && currentTime != originalTime
+        val hasTimeChange = currentTime != originalTime
         
         if ((hasTemperatureChange || hasTimeChange) && !hasChanges) {
             hasChanges = true
