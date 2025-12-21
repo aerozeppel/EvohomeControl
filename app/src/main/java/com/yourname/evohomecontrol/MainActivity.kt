@@ -112,6 +112,45 @@ class MainActivity : AppCompatActivity() {
         loadZones()
         // Check for stale data on launch
         checkDataFreshness()
+
+        // Handle widget intents
+        handleWidgetIntent(intent)
+    }
+
+    private fun handleWidgetIntent(intent: Intent?) {
+        intent?.let {
+            when {
+                it.getBooleanExtra("SHOW_AWAY_DIALOG", false) -> {
+                    // Delay to ensure activity is fully loaded
+                    binding.root.postDelayed({
+                        showAwayModeDialog()
+                    }, 300)
+                }
+                it.getBooleanExtra("CANCEL_ALL_OVERRIDES", false) -> {
+                    binding.root.postDelayed({
+                        cancelAllOverrides()
+                    }, 300)
+                }
+                it.getBooleanExtra("SET_LUNCH_MODE", false) -> {
+                    binding.root.postDelayed({
+                        setLunchMode()
+                    }, 300)
+                }
+                it.getBooleanExtra("SHOW_WORK_FROM_HOME_DIALOG", false) -> {
+                    binding.root.postDelayed({
+                        showWorkFromHomeDialog()
+                    }, 300)
+                }
+                else -> {
+                    // No widget intent, do nothing
+                }
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleWidgetIntent(intent)
     }
 
     override fun onResume() {

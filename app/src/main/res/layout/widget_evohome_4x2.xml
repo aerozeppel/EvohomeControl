@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="0dp"
+    android:background="@drawable/widget_background">
+
+    <!-- Header Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="32dp"
+        android:orientation="horizontal"
+        android:background="#1976D2"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:gravity="center_vertical">
+        
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Evohome"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:letterSpacing="0.02"/>
+        
+        <ImageButton
+            android:id="@+id/refreshButton"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:src="@drawable/ic_refresh"
+            android:background="@drawable/header_button_bg"
+            android:scaleType="centerInside"
+            android:padding="6dp"
+            android:contentDescription="Refresh"/>
+    </LinearLayout>
+
+    <!-- Row 1: Schedule Mode Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal"
+        android:background="@color/background_dark_bar"
+        android:padding="4dp">
+        
+        <ImageButton
+            android:id="@+id/awayButton"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_margin="2dp"
+            android:src="@drawable/ic_away"
+            android:background="@drawable/mode_button_bg"
+            android:scaleType="centerInside"
+            android:padding="8dp"
+            android:contentDescription="Away Mode"/>
+
+        <ImageButton
+            android:id="@+id/returnHomeButton"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_margin="2dp"
+            android:src="@drawable/ic_return_home"
+            android:background="@drawable/mode_button_bg"
+            android:scaleType="centerInside"
+            android:padding="8dp"
+            android:contentDescription="Return Home"/>
+
+        <ImageButton
+            android:id="@+id/lunchButton"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_margin="2dp"
+            android:src="@drawable/ic_lunch"
+            android:background="@drawable/mode_button_bg"
+            android:scaleType="centerInside"
+            android:padding="8dp"
+            android:contentDescription="Lunch Mode"/>
+
+        <ImageButton
+            android:id="@+id/workFromHomeButton"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_margin="2dp"
+            android:src="@drawable/ic_work_from_home"
+            android:background="@drawable/mode_button_bg"
+            android:scaleType="centerInside"
+            android:padding="8dp"
+            android:contentDescription="Work From Home"/>
+    </LinearLayout>
+
+    <!-- Row 2: Zone Display Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal">
+        
+        <!-- Zone 1 -->
+        <LinearLayout
+            android:id="@+id/zone1Container"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:padding="6dp"
+            android:background="@drawable/zone_card_bg"
+            android:layout_margin="2dp"
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true">
+            
+            <TextView
+                android:id="@+id/zone1Name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Living Room"
+                android:textSize="9sp"
+                android:textColor="#424242"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:gravity="center"/>
+            
+            <TextView
+                android:id="@+id/zone1Temp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="20.5"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="#212121"
+                android:layout_marginTop="2dp"/>
+            
+            <TextView
+                android:id="@+id/zone1Target"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="→21.0°"
+                android:textSize="10sp"
+                android:textColor="#757575"/>
+        </LinearLayout>
+        
+        <!-- Zone 2 -->
+        <LinearLayout
+            android:id="@+id/zone2Container"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:padding="6dp"
+            android:background="@drawable/zone_card_bg"
+            android:layout_margin="2dp"
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true">
+            
+            <TextView
+                android:id="@+id/zone2Name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Bedroom"
+                android:textSize="9sp"
+                android:textColor="#424242"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:gravity="center"/>
+            
+            <TextView
+                android:id="@+id/zone2Temp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="19.0"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="#212121"
+                android:layout_marginTop="2dp"/>
+            
+            <TextView
+                android:id="@+id/zone2Target"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="→20.0°"
+                android:textSize="10sp"
+                android:textColor="#757575"/>
+        </LinearLayout>
+        
+        <!-- Zone 3 -->
+        <LinearLayout
+            android:id="@+id/zone3Container"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:padding="6dp"
+            android:background="@drawable/zone_card_bg"
+            android:layout_margin="2dp"
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true">
+            
+            <TextView
+                android:id="@+id/zone3Name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Kitchen"
+                android:textSize="9sp"
+                android:textColor="#424242"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:gravity="center"/>
+            
+            <TextView
+                android:id="@+id/zone3Temp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="18.5"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="#212121"
+                android:layout_marginTop="2dp"/>
+            
+            <TextView
+                android:id="@+id/zone3Target"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="→19.0°"
+                android:textSize="10sp"
+                android:textColor="#757575"/>
+        </LinearLayout>
+        
+        <!-- Zone 4 -->
+        <LinearLayout
+            android:id="@+id/zone4Container"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:padding="6dp"
+            android:background="@drawable/zone_card_bg"
+            android:layout_margin="2dp"
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true">
+            
+            <TextView
+                android:id="@+id/zone4Name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Bathroom"
+                android:textSize="9sp"
+                android:textColor="#424242"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:gravity="center"/>
+            
+            <TextView
+                android:id="@+id/zone4Temp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="21.0"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="#212121"
+                android:layout_marginTop="2dp"/>
+            
+            <TextView
+                android:id="@+id/zone4Target"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="→22.0°"
+                android:textSize="10sp"
+                android:textColor="#757575"/>
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

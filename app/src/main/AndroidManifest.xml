@@ -54,6 +54,25 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/evohome_widget_info" />
         </receiver>
+
+        <receiver
+            android:name=".widget.Evohome4x2Widget"
+            android:label="Evohome 4x2"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.yourname.evohomecontrol.REFRESH_WIDGET" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/evohome_widget_4x2_info" />
+        </receiver>
+        
+        <activity
+            android:name=".WidgetZoneEditActivity"
+            android:theme="@style/DialogActivityTheme"
+            android:excludeFromRecents="true"
+            android:exported="false" />
     </application>
 
 </manifest>
