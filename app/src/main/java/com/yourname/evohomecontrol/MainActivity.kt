@@ -119,27 +119,24 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleWidgetIntent(intent: Intent?) {
         intent?.let {
+            val autoClose = it.getBooleanExtra("AUTO_CLOSE", false)
+
             when {
                 it.getBooleanExtra("SHOW_AWAY_DIALOG", false) -> {
-                    // Delay to ensure activity is fully loaded
-                    binding.root.postDelayed({
-                        showAwayModeDialog()
-                    }, 300)
+                    waitForZonesAndExecute { showAwayModeDialog() }
                 }
                 it.getBooleanExtra("CANCEL_ALL_OVERRIDES", false) -> {
-                    binding.root.postDelayed({
-                        cancelAllOverrides()
-                    }, 300)
+                    waitForZonesAndExecute {
+                        cancelAllOverridesFromWidget(autoClose)
+                    }
                 }
                 it.getBooleanExtra("SET_LUNCH_MODE", false) -> {
-                    binding.root.postDelayed({
-                        setLunchMode()
-                    }, 300)
+                    waitForZonesAndExecute {
+                        setLunchModeFromWidget(autoClose)
+                    }
                 }
                 it.getBooleanExtra("SHOW_WORK_FROM_HOME_DIALOG", false) -> {
-                    binding.root.postDelayed({
-                        showWorkFromHomeDialog()
-                    }, 300)
+                    waitForZonesAndExecute { showWorkFromHomeDialog() }
                 }
                 else -> {
                     // No widget intent, do nothing
@@ -1286,5 +1283,160 @@ private fun openScheduleEditor(zone: Zone) {
             currentMinute,
             true // 24-hour format
         ).show()
+    }
+
+    private fun waitForZonesAndExecute(action: () -> Unit) {
+        lifecycleScope.launch {
+            // If zones are already loaded, execute immediately
+            if (allZones.isNotEmpty()) {
+                action()
+                return@launch
+            }
+
+            // If not loaded, show loading and wait
+            showLoading(true)
+            var attempts = 0
+            while (allZones.isEmpty() && attempts < 10) { // Max 10 attempts (10 seconds)
+                delay(1000)
+                attempts++
+            }
+            showLoading(false)
+
+            if (allZones.isNotEmpty()) {
+                action()
+            } else {
+                showError("Could not load zones for widget action.")
+                finish() // Close activity if zones can't be loaded
+            }
+        }
+    }
+
+    private fun cancelAllOverridesFromWidget(autoClose: Boolean) {
+        if (allZones.isEmpty()) {
+            showError("No zones available")
+            if (autoClose) {
+                finish()
+            }
+            return
+        }
+
+        // Skip the confirmation dialog for widget actions
+        showLoading(true)
+
+        lifecycleScope.launch {
+            try {
+                val tasks = allZones.map { zone ->
+                    async {
+                        try {
+                            val setpoint = HeatSetpoint(
+                                HeatSetpointValue = 0.0,
+                                SetpointMode = 0,
+                                TimeUntil = null
+                            )
+
+                            val response = EvohomeApiClient.apiService.setTemperature(
+                                zoneId = zone.zoneId,
+                                auth = "bearer $accessToken",
+                                setpoint = setpoint
+                            )
+
+                            response.isSuccessful
+                        } catch (e: Exception) {
+                            Log.e("CancelOverrides", "Error canceling ${zone.name}: ${e.message}")
+                            false
+                        }
+                    }
+                }
+
+                val results = tasks.map { it.await() }
+                val successCount = results.count { it }
+
+                showLoading(false)
+
+                if (successCount > 0) {
+                    // Update widget
+                    updateWidget()
+
+                    if (autoClose) {
+                        // Close app and return to home screen
+                        finish()
+                    } else {
+                        loadZones()
+                    }
+                } else {
+                    showError("Failed to cancel overrides")
+                    if (autoClose) {
+                        finish()
+                    }
+                }
+
+            } catch (e: Exception) {
+                showLoading(false)
+                showError("Failed to cancel overrides: ${e.message}")
+                if (autoClose) {
+                    finish()
+                }
+            }
+        }
+    }
+
+    private fun setLunchModeFromWidget(autoClose: Boolean) {
+        val kitchenZone = allZones.find { it.name.equals("Kitchen", ignoreCase = true) }
+
+        if (kitchenZone == null) {
+            showError("Kitchen zone not found")
+            if (autoClose) {
+                finish()
+            }
+            return
+        }
+
+        showLoading(true)
+
+        lifecycleScope.launch {
+            try {
+                val calendar = Calendar.getInstance()
+                calendar.add(Calendar.MINUTE, 45)
+                val timeUntil = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
+                    timeZone = TimeZone.getTimeZone("UTC")
+                }.format(calendar.time)
+
+                val setpoint = HeatSetpoint(
+                    HeatSetpointValue = 19.5,
+                    SetpointMode = 2,
+                    TimeUntil = timeUntil
+                )
+
+                val response = EvohomeApiClient.apiService.setTemperature(
+                    zoneId = kitchenZone.zoneId,
+                    auth = "bearer $accessToken",
+                    setpoint = setpoint
+                )
+
+                showLoading(false)
+
+                if (response.isSuccessful) {
+                    // Update widget
+                    updateWidget()
+
+                    if (autoClose) {
+                        finish()
+                    } else {
+                        loadZones()
+                    }
+                } else {
+                    showError("Failed to set lunch mode: ${response.code()}")
+                    if (autoClose) {
+                        finish()
+                    }
+                }
+            } catch (e: Exception) {
+                showLoading(false)
+                showError("Error setting lunch mode: ${e.message}")
+                if (autoClose) {
+                    finish()
+                }
+            }
+        }
     }
 }

@@ -188,6 +188,12 @@ class WidgetZoneEditActivity : AppCompatActivity() {
         setFinishOnTouchOutside(true)
     }
     
+    override fun finish() {
+        super.finish()
+        // Also finish MainActivity to return to home screen
+        finishAffinity()
+    }
+    
     private fun applyTempOverride() {
         lifecycleScope.launch {
             try {

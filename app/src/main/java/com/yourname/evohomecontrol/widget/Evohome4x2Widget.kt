@@ -31,37 +31,24 @@ class Evohome4x2Widget : AppWidgetProvider() {
     
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
-        
+
         when (intent.action) {
-            ACTION_AWAY -> {
-                // Open MainActivity with away mode dialog
+            ACTION_AWAY, ACTION_RETURN_HOME, ACTION_LUNCH, ACTION_WORK_FROM_HOME -> {
+                // Start MainActivity with the action, but finish it after executing
                 val mainIntent = Intent(context, MainActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    putExtra("SHOW_AWAY_DIALOG", true)
-                }
-                context.startActivity(mainIntent)
-            }
-            ACTION_RETURN_HOME -> {
-                // Open MainActivity and trigger cancel all overrides
-                val mainIntent = Intent(context, MainActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    putExtra("CANCEL_ALL_OVERRIDES", true)
-                }
-                context.startActivity(mainIntent)
-            }
-            ACTION_LUNCH -> {
-                // Open MainActivity and trigger lunch mode
-                val mainIntent = Intent(context, MainActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    putExtra("SET_LUNCH_MODE", true)
-                }
-                context.startActivity(mainIntent)
-            }
-            ACTION_WORK_FROM_HOME -> {
-                // Open MainActivity and trigger work from home mode
-                val mainIntent = Intent(context, MainActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    putExtra("SHOW_WORK_FROM_HOME_DIALOG", true)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NO_ANIMATION
+                    when (intent.action) {
+                        ACTION_AWAY -> putExtra("SHOW_AWAY_DIALOG", true)
+                        ACTION_RETURN_HOME -> {
+                            putExtra("CANCEL_ALL_OVERRIDES", true)
+                            putExtra("AUTO_CLOSE", true) // New flag to auto-close
+                        }
+                        ACTION_LUNCH -> {
+                            putExtra("SET_LUNCH_MODE", true)
+                            putExtra("AUTO_CLOSE", true) // New flag to auto-close
+                        }
+                        ACTION_WORK_FROM_HOME -> putExtra("SHOW_WORK_FROM_HOME_DIALOG", true)
+                    }
                 }
                 context.startActivity(mainIntent)
             }
