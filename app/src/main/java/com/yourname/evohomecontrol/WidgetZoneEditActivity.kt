@@ -12,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import com.yourname.evohomecontrol.api.EvohomeApiClient
 import com.yourname.evohomecontrol.api.HeatSetpoint
 import com.yourname.evohomecontrol.widget.Evohome4x2Widget
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -238,16 +239,11 @@ class WidgetZoneEditActivity : AppCompatActivity() {
                 }
 
                 if (response.isSuccessful) {
-                    // Update widget
                     val intent = Intent(this@WidgetZoneEditActivity, Evohome4x2Widget::class.java).apply {
-                        action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                        action = Evohome4x2Widget.ACTION_DELAYED_REFRESH
                     }
-                    val ids = AppWidgetManager.getInstance(application).getAppWidgetIds(
-                        ComponentName(application, Evohome4x2Widget::class.java)
-                    )
-                    intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
                     sendBroadcast(intent)
-                    
+
                     setResult(RESULT_OK)
                     finish()
                 } else {
@@ -290,14 +286,10 @@ class WidgetZoneEditActivity : AppCompatActivity() {
 
                 if (response.isSuccessful) {
                     val intent = Intent(this@WidgetZoneEditActivity, Evohome4x2Widget::class.java).apply {
-                        action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                        action = Evohome4x2Widget.ACTION_DELAYED_REFRESH
                     }
-                    val ids = AppWidgetManager.getInstance(application).getAppWidgetIds(
-                        ComponentName(application, Evohome4x2Widget::class.java)
-                    )
-                    intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
                     sendBroadcast(intent)
-                    
+
                     setResult(RESULT_OK)
                     finish()
                 } else {

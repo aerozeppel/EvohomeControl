@@ -118,32 +118,79 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleWidgetIntent(intent: Intent?) {
-        intent?.let {
-            val autoClose = it.getBooleanExtra("AUTO_CLOSE", false)
+    if (intent == null) return
+    
+    val autoClose = intent.getBooleanExtra("AUTO_CLOSE", false)
 
-            when {
-                it.getBooleanExtra("SHOW_AWAY_DIALOG", false) -> {
-                    waitForZonesAndExecute { showAwayModeDialog() }
+    // NEW: Handle delayed refresh request from quick actions
+    val delayedRefreshSeconds = intent.getIntExtra("DELAYED_REFRESH_SECONDS", 0)
+    if (delayedRefreshSeconds > 0) {
+        lifecycleScope.launch {
+            Log.d("MainActivity", "Scheduling delayed refresh in $delayedRefreshSeconds seconds...")
+            delay(delayedRefreshSeconds * 1000L)
+            Log.d("MainActivity", "Executing delayed refresh now")
+            loadZones(manualRefresh = false)
+        }
+    }
+
+    when {
+        intent.getBooleanExtra("BACKGROUND_REFRESH", false) -> {
+            Log.d("MainActivity", "Background refresh requested by widget")
+            
+            // Check if there's a delayed refresh
+            val delayedRefreshSeconds = intent.getIntExtra("DELAYED_REFRESH_SECONDS", 0)
+            
+            if (delayedRefreshSeconds > 0) {
+                // Schedule delayed refresh, then close
+                lifecycleScope.launch {
+                    Log.d("MainActivity", "Scheduling delayed refresh in $delayedRefreshSeconds seconds...")
+                    delay(delayedRefreshSeconds * 1000L)
+                    Log.d("MainActivity", "Executing delayed refresh now")
+                    loadZones(manualRefresh = false)
+                    delay(2000) // Wait for data to be saved
+                    finish()
                 }
-                it.getBooleanExtra("CANCEL_ALL_OVERRIDES", false) -> {
-                    waitForZonesAndExecute {
-                        cancelAllOverridesFromWidget(autoClose)
-                    }
-                }
-                it.getBooleanExtra("SET_LUNCH_MODE", false) -> {
-                    waitForZonesAndExecute {
-                        setLunchModeFromWidget(autoClose)
-                    }
-                }
-                it.getBooleanExtra("SHOW_WORK_FROM_HOME_DIALOG", false) -> {
-                    waitForZonesAndExecute { showWorkFromHomeDialog() }
-                }
-                else -> {
-                    // No widget intent, do nothing
+            } else {
+                // Immediate refresh
+                loadZones(manualRefresh = false)
+                lifecycleScope.launch {
+                    delay(2000) // Wait for data to be saved
+                    finish()
                 }
             }
         }
+        intent.getBooleanExtra("SHOW_AWAY_DIALOG", false) -> {
+            waitForZonesAndExecute { showAwayModeDialog() }
+        }
+        intent.getBooleanExtra("CANCEL_ALL_OVERRIDES", false) -> {
+            waitForZonesAndExecute {
+                cancelAllOverridesFromWidget(autoClose)
+            }
+        }
+        intent.getBooleanExtra("SET_LUNCH_MODE", false) -> {
+            waitForZonesAndExecute {
+                setLunchModeFromWidget(autoClose)
+            }
+        }
+        intent.getBooleanExtra("SHOW_WORK_FROM_HOME_DIALOG", false) -> {
+            waitForZonesAndExecute { 
+                showWorkFromHomeDialog(autoClose = intent.getBooleanExtra("AUTO_CLOSE", false)) 
+            }
+        }
+        intent.getBooleanExtra("REFRESH_ZONES", false) -> {
+            loadZones(manualRefresh = false)
+            if (autoClose) {
+                lifecycleScope.launch {
+                    delay(3000)
+                    finish()
+                }
+            }
+        }
+        else -> {
+            // No widget intent action matched, do nothing
+        }
     }
+}
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
@@ -742,6 +789,11 @@ private fun openScheduleEditor(zone: Zone) {
                 delay(2000)
                 loadZones()
 
+                val intent = Intent(this@MainActivity, com.yourname.evohomecontrol.widget.Evohome4x2Widget::class.java).apply {
+                    action = com.yourname.evohomecontrol.widget.Evohome4x2Widget.ACTION_DELAYED_REFRESH
+                }
+                sendBroadcast(intent)
+
             } catch (e: Exception) {
                 showLoading(false)
                 showError("Failed to enable away mode: ${e.message}")
@@ -884,14 +936,27 @@ private fun openScheduleEditor(zone: Zone) {
     }
 
     private fun updateWidget() {
-        val intent = Intent(this, EvohomeWidget::class.java).apply {
+        // Update 2x2 widget
+        val intent2x2 = Intent(this, EvohomeWidget::class.java).apply {
             action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
         }
-        val ids = AppWidgetManager.getInstance(application).getAppWidgetIds(
+        val ids2x2 = AppWidgetManager.getInstance(application).getAppWidgetIds(
             ComponentName(application, EvohomeWidget::class.java)
         )
-        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
-        sendBroadcast(intent)
+        intent2x2.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids2x2)
+        sendBroadcast(intent2x2)
+
+        // Update 4x2 widget
+        val intent4x2 = Intent(this, com.yourname.evohomecontrol.widget.Evohome4x2Widget::class.java).apply {
+            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+        }
+        val ids4x2 = AppWidgetManager.getInstance(application).getAppWidgetIds(
+            ComponentName(application, com.yourname.evohomecontrol.widget.Evohome4x2Widget::class.java)
+        )
+        intent4x2.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids4x2)
+        sendBroadcast(intent4x2)
+
+        Log.d("MainActivity", "Widget update broadcasts sent")
     }
 
     private fun saveZonesForWidget() {
@@ -1207,12 +1272,15 @@ private fun openScheduleEditor(zone: Zone) {
         }
     }
 
-    private fun showWorkFromHomeDialog() {
+    private fun showWorkFromHomeDialog(autoClose: Boolean = false) {
         // Find the kitchen zone
         val kitchenZone = allZones.find { it.name.equals("Kitchen", ignoreCase = true) }
 
         if (kitchenZone == null) {
             showError("Kitchen zone not found")
+            if (autoClose) {
+                finish()
+            }
             return
         }
 
@@ -1221,7 +1289,7 @@ private fun openScheduleEditor(zone: Zone) {
         val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
         val currentMinute = calendar.get(Calendar.MINUTE)
 
-        android.app.TimePickerDialog(
+        val timePickerDialog = android.app.TimePickerDialog(
             this,
             { _, hour, minute ->
                 // Calculate duration until selected time
@@ -1269,20 +1337,44 @@ private fun openScheduleEditor(zone: Zone) {
 
                             delay(2000)
                             loadZones()
+
+                            val intent = Intent(this@MainActivity, com.yourname.evohomecontrol.widget.Evohome4x2Widget::class.java).apply {
+                                action = com.yourname.evohomecontrol.widget.Evohome4x2Widget.ACTION_DELAYED_REFRESH
+                            }
+                            sendBroadcast(intent)
+
+                            if (autoClose) {
+                                delay(1000) // Small delay to let snackbar show briefly
+                                finish()
+                            }
                         } else {
                             showError("Failed to set work from home mode: ${response.code()}")
+                            if (autoClose) {
+                                finish()
+                            }
                         }
                     } catch (e: Exception) {
                         showLoading(false)
                         showError("Error setting work from home mode: ${e.message}")
                         e.printStackTrace()
+                        if (autoClose) {
+                            finish()
+                        }
                     }
                 }
             },
             currentHour,
             currentMinute,
             true // 24-hour format
-        ).show()
+        )
+        
+        timePickerDialog.setOnCancelListener {
+             if (autoClose) {
+                 finish()
+             }
+        }
+        
+        timePickerDialog.show()
     }
 
     private fun waitForZonesAndExecute(action: () -> Unit) {
@@ -1355,7 +1447,10 @@ private fun openScheduleEditor(zone: Zone) {
 
                 if (successCount > 0) {
                     // Update widget
-                    updateWidget()
+                    val intent = Intent(this@MainActivity, com.yourname.evohomecontrol.widget.Evohome4x2Widget::class.java).apply {
+                        action = com.yourname.evohomecontrol.widget.Evohome4x2Widget.ACTION_DELAYED_REFRESH
+                    }
+                    sendBroadcast(intent)
 
                     if (autoClose) {
                         // Close app and return to home screen
@@ -1417,7 +1512,10 @@ private fun openScheduleEditor(zone: Zone) {
 
                 if (response.isSuccessful) {
                     // Update widget
-                    updateWidget()
+                    val intent = Intent(this@MainActivity, com.yourname.evohomecontrol.widget.Evohome4x2Widget::class.java).apply {
+                        action = com.yourname.evohomecontrol.widget.Evohome4x2Widget.ACTION_DELAYED_REFRESH
+                    }
+                    sendBroadcast(intent)
 
                     if (autoClose) {
                         finish()

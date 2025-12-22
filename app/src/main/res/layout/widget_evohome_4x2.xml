@@ -120,19 +120,40 @@
                 android:id="@+id/zone1Name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Living Room"
+                android:text="---"
                 android:textSize="9sp"
                 android:textColor="#424242"
                 android:textStyle="bold"
                 android:maxLines="1"
                 android:ellipsize="end"
                 android:gravity="center"/>
+
+            <!-- NEW: Status indicator -->
+            <TextView
+                android:id="@+id/zone1Status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Following"
+                android:textSize="7sp"
+                android:textColor="#757575"
+                android:textStyle="italic"
+                android:layout_marginTop="1dp"/>
+
+            <!-- NEW: Flame icon for heat demand -->
+            <TextView
+                android:id="@+id/zone1Flame"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🔥"
+                android:textSize="10sp"
+                android:visibility="gone"
+                android:layout_marginTop="1dp"/>
             
             <TextView
                 android:id="@+id/zone1Temp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="20.5"
+                android:text="--.-"
                 android:textSize="22sp"
                 android:textStyle="bold"
                 android:textColor="#212121"
@@ -142,7 +163,7 @@
                 android:id="@+id/zone1Target"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="→21.0°"
+                android:text="→--.-°"
                 android:textSize="10sp"
                 android:textColor="#757575"/>
         </LinearLayout>
@@ -165,19 +186,40 @@
                 android:id="@+id/zone2Name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Bedroom"
+                android:text="---"
                 android:textSize="9sp"
                 android:textColor="#424242"
                 android:textStyle="bold"
                 android:maxLines="1"
                 android:ellipsize="end"
                 android:gravity="center"/>
+
+            <!-- NEW: Status indicator -->
+            <TextView
+                android:id="@+id/zone2Status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Following"
+                android:textSize="7sp"
+                android:textColor="#757575"
+                android:textStyle="italic"
+                android:layout_marginTop="1dp"/>
+
+            <!-- NEW: Flame icon for heat demand -->
+            <TextView
+                android:id="@+id/zone2Flame"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🔥"
+                android:textSize="10sp"
+                android:visibility="gone"
+                android:layout_marginTop="1dp"/>
             
             <TextView
                 android:id="@+id/zone2Temp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="19.0"
+                android:text="--.-"
                 android:textSize="22sp"
                 android:textStyle="bold"
                 android:textColor="#212121"
@@ -187,7 +229,7 @@
                 android:id="@+id/zone2Target"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="→20.0°"
+                android:text="→--.-°"
                 android:textSize="10sp"
                 android:textColor="#757575"/>
         </LinearLayout>
@@ -210,19 +252,40 @@
                 android:id="@+id/zone3Name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Kitchen"
+                android:text="---"
                 android:textSize="9sp"
                 android:textColor="#424242"
                 android:textStyle="bold"
                 android:maxLines="1"
                 android:ellipsize="end"
                 android:gravity="center"/>
+
+            <!-- NEW: Status indicator -->
+            <TextView
+                android:id="@+id/zone3Status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Following"
+                android:textSize="7sp"
+                android:textColor="#757575"
+                android:textStyle="italic"
+                android:layout_marginTop="1dp"/>
+
+            <!-- NEW: Flame icon for heat demand -->
+            <TextView
+                android:id="@+id/zone3Flame"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🔥"
+                android:textSize="10sp"
+                android:visibility="gone"
+                android:layout_marginTop="1dp"/>
             
             <TextView
                 android:id="@+id/zone3Temp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="18.5"
+                android:text="--.-"
                 android:textSize="22sp"
                 android:textStyle="bold"
                 android:textColor="#212121"
@@ -232,7 +295,7 @@
                 android:id="@+id/zone3Target"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="→19.0°"
+                android:text="→--.-°"
                 android:textSize="10sp"
                 android:textColor="#757575"/>
         </LinearLayout>
@@ -255,19 +318,40 @@
                 android:id="@+id/zone4Name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Bathroom"
+                android:text="---"
                 android:textSize="9sp"
                 android:textColor="#424242"
                 android:textStyle="bold"
                 android:maxLines="1"
                 android:ellipsize="end"
                 android:gravity="center"/>
+
+            <!-- NEW: Status indicator -->
+            <TextView
+                android:id="@+id/zone4Status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Following"
+                android:textSize="7sp"
+                android:textColor="#757575"
+                android:textStyle="italic"
+                android:layout_marginTop="1dp"/>
+
+            <!-- NEW: Flame icon for heat demand -->
+            <TextView
+                android:id="@+id/zone4Flame"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🔥"
+                android:textSize="10sp"
+                android:visibility="gone"
+                android:layout_marginTop="1dp"/>
             
             <TextView
                 android:id="@+id/zone4Temp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="21.0"
+                android:text="--.-"
                 android:textSize="22sp"
                 android:textStyle="bold"
                 android:textColor="#212121"
@@ -277,7 +361,7 @@
                 android:id="@+id/zone4Target"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="→22.0°"
+                android:text="→--.-°"
                 android:textSize="10sp"
                 android:textColor="#757575"/>
         </LinearLayout>

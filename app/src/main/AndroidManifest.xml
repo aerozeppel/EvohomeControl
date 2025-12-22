@@ -3,6 +3,9 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.GET_TASKS" />
 
     <application
         android:allowBackup="true"
@@ -57,11 +60,10 @@
 
         <receiver
             android:name=".widget.Evohome4x2Widget"
-            android:label="Evohome 4x2"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.yourname.evohomecontrol.REFRESH_WIDGET" />
+                <action android:name="android.intent.action.SCREEN_ON" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
@@ -73,6 +75,7 @@
             android:theme="@style/DialogActivityTheme"
             android:excludeFromRecents="true"
             android:exported="false" />
+            
     </application>
 
 </manifest>
