@@ -808,78 +808,87 @@ private fun openScheduleEditor(zone: Zone) {
             return
         }
 
+        val zonesWithOverrides = allZones.filter { 
+            it.heatSetpointStatus.setpointMode != "FollowSchedule" 
+        }
+
+        if (zonesWithOverrides.isEmpty()) {
+            Snackbar.make(binding.root, "No active overrides to cancel.", Snackbar.LENGTH_SHORT).show()
+            return
+        }
+
         AlertDialog.Builder(this)
-            .setTitle("Cancel All Overrides")
-            .setMessage("Return all zones to follow their schedules?")
+            .setTitle("Cancel Overrides")
+            .setMessage("Return ${zonesWithOverrides.size} zones with active overrides to their schedules?")
             .setPositiveButton("Confirm") { _, _ ->
-                showLoading(true)
-
-                lifecycleScope.launch {
-                    try {
-                        // Create a list of deferred tasks
-                        val tasks = allZones.map { zone ->
-                            async {
-                                try {
-                                    val setpoint = HeatSetpoint(
-                                        HeatSetpointValue = 0.0,
-                                        SetpointMode = 0, // Follow schedule
-                                        TimeUntil = null
-                                    )
-
-                                    val response = EvohomeApiClient.apiService.setTemperature(
-                                        zoneId = zone.zoneId,
-                                        auth = "bearer $accessToken",
-                                        setpoint = setpoint
-                                    )
-
-                                    if (response.isSuccessful) {
-                                        true // Success
-                                    } else {
-                                        Log.e("CancelOverrides", "Failed to cancel ${zone.name}: ${response.code()}")
-                                        false // Failure
-                                    }
-                                } catch (e: Exception) {
-                                    Log.e("CancelOverrides", "Error canceling ${zone.name}: ${e.message}")
-                                    false // Failure
-                                }
-                            }
-                        }
-
-                        // Await all results
-                        val results = tasks.map { it.await() }
-                        val successCount = results.count { it }
-                        val failCount = results.count { !it }
-
-                        showLoading(false)
-
-                        // Show result
-                        if (failCount == 0) {
-                            Snackbar.make(
-                                binding.root,
-                                "All zones now following schedules ($successCount zones)",
-                                Snackbar.LENGTH_LONG
-                            ).show()
-                        } else {
-                            Snackbar.make(
-                                binding.root,
-                                "Overrides cancelled: $successCount succeeded, $failCount failed",
-                                Snackbar.LENGTH_LONG
-                            ).show()
-                        }
-
-                        // Refresh zone list
-                        delay(2000)
-                        loadZones()
-
-                    } catch (e: Exception) {
-                        showLoading(false)
-                        showError("Failed to cancel overrides: ${e.message}")
-                        e.printStackTrace()
-                    }
-                }
+                executeCancelOverrides(zonesWithOverrides)
             }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    private fun executeCancelOverrides(zonesToReset: List<Zone>) {
+        showLoading(true)
+
+        lifecycleScope.launch {
+            try {
+                val tasks = zonesToReset.map { zone ->
+                    async {
+                        try {
+                            val setpoint = HeatSetpoint(
+                                HeatSetpointValue = 0.0,
+                                SetpointMode = 0, // Follow schedule
+                                TimeUntil = null
+                            )
+
+                            val response = EvohomeApiClient.apiService.setTemperature(
+                                zoneId = zone.zoneId,
+                                auth = "bearer $accessToken",
+                                setpoint = setpoint
+                            )
+
+                            if (response.isSuccessful) {
+                                true // Success
+                            } else {
+                                Log.e("CancelOverrides", "Failed to cancel ${zone.name}: ${response.code()}")
+                                false // Failure
+                            }
+                        } catch (e: Exception) {
+                            Log.e("CancelOverrides", "Error canceling ${zone.name}: ${e.message}")
+                            false // Failure
+                        }
+                    }
+                }
+
+                val results = tasks.map { it.await() }
+                val successCount = results.count { it }
+                val failCount = results.count { !it }
+
+                showLoading(false)
+
+                if (failCount == 0) {
+                    Snackbar.make(
+                        binding.root,
+                        "All overrides cancelled ($successCount zones).",
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                } else {
+                    Snackbar.make(
+                        binding.root,
+                        "Cancelled overrides: $successCount succeeded, $failCount failed.",
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                }
+
+                delay(2000)
+                loadZones()
+
+            } catch (e: Exception) {
+                showLoading(false)
+                showError("Failed to cancel overrides: ${e.message}")
+                e.printStackTrace()
+            }
+        }
     }
 
     private fun formatDuration(minutes: Int): String {

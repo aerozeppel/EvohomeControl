@@ -75,6 +75,20 @@
             android:theme="@style/DialogActivityTheme"
             android:excludeFromRecents="true"
             android:exported="false" />
+
+        <activity
+            android:name=".WidgetAwayModeActivity"
+            android:theme="@style/DialogActivityTheme"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:exported="false" />
+
+        <activity
+            android:name=".WidgetWorkFromHomeActivity"
+            android:theme="@style/DialogActivityTheme"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:exported="false" />
             
     </application>
 

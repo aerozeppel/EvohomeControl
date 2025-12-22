@@ -19,6 +19,8 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.yourname.evohomecontrol.MainActivity
 import com.yourname.evohomecontrol.R
+import com.yourname.evohomecontrol.WidgetAwayModeActivity
+import com.yourname.evohomecontrol.WidgetWorkFromHomeActivity
 import com.yourname.evohomecontrol.WidgetZoneEditActivity
 import com.yourname.evohomecontrol.api.Zone
 import android.os.Bundle
@@ -135,29 +137,42 @@ override fun onEnabled(context: Context) {
         ACTION_AWAY, ACTION_RETURN_HOME, ACTION_LUNCH, ACTION_WORK_FROM_HOME -> {
     Log.d("Evohome4x2Widget", "Quick action triggered: ${intent.action}")
     
-    // Schedule delayed data fetch (20 seconds) to give API time to process
-    triggerDelayedDataFetch(context, 20)
-    
-    // Start MainActivity with the action
-    val mainIntent = Intent(context, MainActivity::class.java).apply {
-        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NO_ANIMATION
-        when (intent.action) {
-            ACTION_AWAY -> putExtra("SHOW_AWAY_DIALOG", true)
-            ACTION_RETURN_HOME -> {
-                putExtra("CANCEL_ALL_OVERRIDES", true)
-                putExtra("AUTO_CLOSE", true)
+    when (intent.action) {
+        ACTION_AWAY -> {
+            // Open away mode dialog activity
+            val awayIntent = Intent(context, WidgetAwayModeActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
-            ACTION_LUNCH -> {
-                putExtra("SET_LUNCH_MODE", true)
-                putExtra("AUTO_CLOSE", true)
+            context.startActivity(awayIntent)
+        }
+        ACTION_WORK_FROM_HOME -> {
+            // Open work from home dialog activity
+            val wfhIntent = Intent(context, WidgetWorkFromHomeActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
-            ACTION_WORK_FROM_HOME -> {
-                putExtra("SHOW_WORK_FROM_HOME_DIALOG", true)
-                putExtra("AUTO_CLOSE", true)
+            context.startActivity(wfhIntent)
+        }
+        ACTION_RETURN_HOME, ACTION_LUNCH -> {
+            // These still use MainActivity
+            val mainIntent = Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NO_ANIMATION
+                when (intent.action) {
+                    ACTION_RETURN_HOME -> {
+                        putExtra("CANCEL_ALL_OVERRIDES", true)
+                        putExtra("AUTO_CLOSE", true)
+                    }
+                    ACTION_LUNCH -> {
+                        putExtra("SET_LUNCH_MODE", true)
+                        putExtra("AUTO_CLOSE", true)
+                    }
+                }
             }
+            context.startActivity(mainIntent)
+            
+            // Schedule delayed refresh
+            triggerDelayedDataFetch(context, 20)
         }
     }
-    context.startActivity(mainIntent)
 }
     }
 }
