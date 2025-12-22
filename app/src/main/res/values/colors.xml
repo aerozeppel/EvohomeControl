@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="colorAccent">#4CAF50</color>
     <!-- Primary Brand Color - Red (Updated to match official app) -->
     <color name="evohome_red">#E63946</color>
     <color name="evohome_red_dark">#D62828</color>

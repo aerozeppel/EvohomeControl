@@ -89,6 +89,22 @@
             android:excludeFromRecents="true"
             android:taskAffinity=""
             android:exported="false" />
+
+        <activity
+            android:name=".WidgetReturnHomeActivity"
+            android:theme="@style/DialogActivityTheme"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:taskAffinity=""
+            android:exported="false" />
+
+        <activity
+            android:name=".WidgetLunchActivity"
+            android:theme="@style/DialogActivityTheme"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:taskAffinity=""
+            android:exported="false" />
             
     </application>
 

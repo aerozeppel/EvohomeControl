@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="320dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@drawable/dialog_background"
+    android:gravity="center">
+
+    <ImageView
+        android:id="@+id/iconImage"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:src="@drawable/ic_home"
+        android:tint="@color/colorAccent"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:id="@+id/dialogTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Return Home"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:textColor="@android:color/white"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/dialogMessage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Cancel all active overrides and return all zones to their schedules?"
+        android:textSize="14sp"
+        android:textColor="#CCCCCC"
+        android:gravity="center"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/zonesCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="12sp"
+        android:textColor="#999999"
+        android:gravity="center"
+        android:layout_marginBottom="24dp"
+        android:visibility="gone" />
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:indeterminate="true"
+        android:visibility="gone"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:id="@+id/statusText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="14sp"
+        android:textColor="@android:color/white"
+        android:gravity="center"
+        android:layout_marginBottom="16dp"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/buttonLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/cancelButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Cancel"
+            android:textSize="14sp"
+            android:layout_marginEnd="8dp"
+            android:backgroundTint="#555555" />
+
+        <Button
+            android:id="@+id/confirmButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Return Home"
+            android:textSize="14sp"
+            android:layout_marginStart="8dp"
+            android:backgroundTint="#4CAF50" />
+    </LinearLayout>
+
+</LinearLayout>
