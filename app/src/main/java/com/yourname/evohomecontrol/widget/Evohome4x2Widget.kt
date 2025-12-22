@@ -165,7 +165,12 @@ override fun onEnabled(context: Context) {
 private fun triggerDataFetch(context: Context) {
     Log.d("Evohome4x2Widget", "Triggering data fetch via WorkManager")
     
+    val constraints = androidx.work.Constraints.Builder()
+        .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
+        .build()
+    
     val workRequest = androidx.work.OneTimeWorkRequestBuilder<WidgetUpdateWorker>()
+        .setConstraints(constraints)
         .build()
     
     androidx.work.WorkManager.getInstance(context).enqueue(workRequest)
@@ -174,8 +179,13 @@ private fun triggerDataFetch(context: Context) {
 private fun triggerDelayedDataFetch(context: Context, delaySeconds: Long) {
     Log.d("Evohome4x2Widget", "Scheduling delayed data fetch in $delaySeconds seconds")
     
+    val constraints = androidx.work.Constraints.Builder()
+        .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
+        .build()
+    
     val workRequest = androidx.work.OneTimeWorkRequestBuilder<WidgetUpdateWorker>()
         .setInitialDelay(delaySeconds, java.util.concurrent.TimeUnit.SECONDS)
+        .setConstraints(constraints)
         .build()
     
     androidx.work.WorkManager.getInstance(context).enqueue(workRequest)
