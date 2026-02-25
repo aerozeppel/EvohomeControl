@@ -1,5 +1,6 @@
 package com.yourname.evohomecontrol
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.GestureDetector
 import android.view.MotionEvent
@@ -226,10 +227,11 @@ class SwitchpointEditorActivity : AppCompatActivity() {
     }
 
     private fun saveAndFinish() {
-        val resultIntent = intent.apply {
+        val resultIntent = Intent().apply {
             putExtra(EXTRA_TEMPERATURE, currentTemperature)
             putExtra(EXTRA_TIME, currentTime)
             putExtra(EXTRA_IS_NEW, isNewSwitchpoint)
+            putExtra(EXTRA_POSITION, intent.getIntExtra(EXTRA_POSITION, -1))
         }
         setResult(RESULT_OK, resultIntent)
         finish()
@@ -240,8 +242,9 @@ class SwitchpointEditorActivity : AppCompatActivity() {
             .setTitle("Delete Switchpoint")
             .setMessage("Are you sure you want to delete this switchpoint?")
             .setPositiveButton("Delete") { _, _ ->
-                val resultIntent = intent.apply {
+                val resultIntent = Intent().apply {
                     putExtra("delete", true)
+                    putExtra(EXTRA_POSITION, intent.getIntExtra(EXTRA_POSITION, -1))
                 }
                 setResult(RESULT_OK, resultIntent)
                 finish()

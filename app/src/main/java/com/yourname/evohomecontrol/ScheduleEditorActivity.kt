@@ -77,14 +77,20 @@ class ScheduleEditorActivity : AppCompatActivity() {
                     Toast.makeText(this, "Switchpoint added", Toast.LENGTH_SHORT).show()
                 }
             } else if (position >= 0) {
-                // Update existing switchpoint temperature
                 val newTemp = data?.getDoubleExtra(SwitchpointEditorActivity.EXTRA_TEMPERATURE, 0.0) ?: 0.0
+                val newTime = data?.getStringExtra(SwitchpointEditorActivity.EXTRA_TIME) ?: ""
                 val sortedList = switchpoints.sortedBy { it.timeOfDay }
                 val oldSwitchpoint = sortedList[position]
-                switchpoints.remove(oldSwitchpoint)
-                switchpoints.add(Switchpoint(newTemp, oldSwitchpoint.timeOfDay))
-                markAsModified()
-                updateUI()
+
+                if (newTime.isNotEmpty() && newTime != oldSwitchpoint.timeOfDay &&
+                    switchpoints.any { it.timeOfDay == newTime }) {
+                    Toast.makeText(this, "A switchpoint already exists at this time", Toast.LENGTH_SHORT).show()
+                } else {
+                    switchpoints.remove(oldSwitchpoint)
+                    switchpoints.add(Switchpoint(newTemp, if (newTime.isNotEmpty()) newTime else oldSwitchpoint.timeOfDay))
+                    markAsModified()
+                    updateUI()
+                }
             }
         }
     }
@@ -422,7 +428,14 @@ private fun deleteSwitchpoint(day: String, position: Int) {
                 val dailySchedules = daysOfWeek.map { day ->
                     DailySchedule(
                         dayOfWeek = day,
-                        switchpoints = (schedule[day] ?: emptyList()).sortedBy { it.timeOfDay }
+                        switchpoints = (schedule[day] ?: emptyList())
+                            .sortedBy { it.timeOfDay }
+                            .map { sp ->
+                                Switchpoint(
+                                    temperature = sp.temperature,
+                                    timeOfDay = if (sp.timeOfDay.length == 5) "${sp.timeOfDay}:00" else sp.timeOfDay
+                                )
+                            }
                     )
                 }
 
