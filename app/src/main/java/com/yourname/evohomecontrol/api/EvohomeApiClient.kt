@@ -8,7 +8,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object EvohomeApiClient {
     
-    private const val BASE_URL = "https://tccna.honeywell.com/"
+    private const val BASE_URL = "https://tccna.resideo.com/"
     private const val BASIC_AUTH = "Basic YjAxM2FhMjYtOTcyNC00ZGJkLTg4OTctMDQ4YjlhYWRhMjQ5OnRlc3Q="
     
     private val loggingInterceptor = HttpLoggingInterceptor().apply {

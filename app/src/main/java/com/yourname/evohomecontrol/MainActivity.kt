@@ -66,6 +66,15 @@ class MainActivity : AppCompatActivity() {
         accessToken = prefs.getString("access_token", "") ?: ""
         userId = prefs.getString("user_id", "") ?: ""
 
+        // Check if we have credentials at all
+        val hasSavedCredentials = prefs.getBoolean("credentials_saved", false)
+        if (accessToken.isEmpty() && !hasSavedCredentials) {
+            // No credentials saved, redirect to login
+            startActivity(Intent(this, LoginActivity::class.java))
+            finish()
+            return
+        }
+
         // Set up RecyclerView
         adapter = ZoneAdapter(
             emptyList(),

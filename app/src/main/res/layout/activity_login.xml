@@ -40,14 +40,6 @@
             android:inputType="textPassword"/>
     </com.google.android.material.textfield.TextInputLayout>
 
-    <CheckBox
-        android:id="@+id/rememberMeCheckbox"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="start"
-        android:text="Remember Me"
-        android:layout_marginBottom="16dp"/>
-
     <Button
         android:id="@+id/loginButton"
         android:layout_width="match_parent"

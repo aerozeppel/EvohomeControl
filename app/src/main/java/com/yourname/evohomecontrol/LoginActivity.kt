@@ -4,7 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
-import android.widget.CheckBox
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -20,7 +19,6 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var loginButton: Button
     private lateinit var progressBar: ProgressBar
     private lateinit var errorText: TextView
-    private lateinit var rememberMeCheckbox: CheckBox
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,7 +29,6 @@ class LoginActivity : AppCompatActivity() {
         loginButton = findViewById(R.id.loginButton)
         progressBar = findViewById(R.id.progressBar)
         errorText = findViewById(R.id.errorText)
-        rememberMeCheckbox = findViewById(R.id.rememberMeCheckbox)
         
         // Check if already logged in
         checkExistingLogin()
@@ -45,13 +42,11 @@ class LoginActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("evohome_prefs", MODE_PRIVATE)
         val savedEmail = prefs.getString("saved_email", null)
         val savedPassword = prefs.getString("saved_password", null)
-        val rememberMe = prefs.getBoolean("remember_me", false)
         
-        if (rememberMe && !savedEmail.isNullOrEmpty() && !savedPassword.isNullOrEmpty()) {
+        if (!savedEmail.isNullOrEmpty() && !savedPassword.isNullOrEmpty()) {
             // Auto-fill and auto-login
             emailInput.setText(savedEmail)
             passwordInput.setText(savedPassword)
-            rememberMeCheckbox.isChecked = true
             
             // Automatically attempt login
             progressBar.visibility = View.VISIBLE
@@ -60,7 +55,6 @@ class LoginActivity : AppCompatActivity() {
         } else if (!savedEmail.isNullOrEmpty()) {
             // Just pre-fill email if available
             emailInput.setText(savedEmail)
-            rememberMeCheckbox.isChecked = rememberMe
         }
     }
     
@@ -101,14 +95,9 @@ class LoginActivity : AppCompatActivity() {
                     if (accountResponse.isSuccessful && accountResponse.body() != null) {
                         val account = accountResponse.body()!!
                         
-                        // Save session and credentials if "Remember Me" is checked
+                        // Always save session and credentials
                         saveSession(accessToken, refreshToken, account.userId)
-                        
-                        if (rememberMeCheckbox.isChecked) {
-                            saveCredentials(email, password)
-                        } else {
-                            clearSavedCredentials()
-                        }
+                        saveCredentials(email, password)
                         
                         // Navigate to main screen
                         startActivity(Intent(this@LoginActivity, MainActivity::class.java))
@@ -118,6 +107,7 @@ class LoginActivity : AppCompatActivity() {
                     }
                 } else {
                     showError("Login failed: Invalid credentials")
+                    // Clear saved credentials only if login fails
                     clearSavedCredentials()
                 }
             } catch (e: Exception) {
@@ -145,7 +135,7 @@ class LoginActivity : AppCompatActivity() {
         prefs.edit().apply {
             putString("saved_email", email)
             putString("saved_password", password)
-            putBoolean("remember_me", true)
+            putBoolean("credentials_saved", true)
             apply()
         }
     }
@@ -155,7 +145,7 @@ class LoginActivity : AppCompatActivity() {
         prefs.edit().apply {
             remove("saved_email")
             remove("saved_password")
-            putBoolean("remember_me", false)
+            putBoolean("credentials_saved", false)
             apply()
         }
     }
