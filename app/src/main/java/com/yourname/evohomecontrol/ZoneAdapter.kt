@@ -75,6 +75,12 @@ class ZoneAdapter(
             binding.heatDemandContainer.visibility = View.GONE
         }
 
+        // Battery warning
+        val hasBatteryFault = zone.activeFaults.any { 
+            it.faultType.contains("Battery", ignoreCase = true) 
+        }
+        binding.batteryWarningContainer.visibility = if (hasBatteryFault) View.VISIBLE else View.GONE
+
         // Button clicks
         binding.tempButton.setOnClickListener {
             onTempClick(zone)

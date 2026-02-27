@@ -47,6 +47,11 @@ data class TemperatureControlSystem(
     val zones: List<Zone>
 )
 
+data class ActiveFault(
+    val faultType: String,
+    val since: String
+)
+
 // Zone - UPDATED with heat demand
 data class Zone(
     val zoneId: String,
@@ -55,7 +60,8 @@ data class Zone(
     val zoneType: String?,
     val temperatureStatus: TemperatureStatus,
     val heatSetpointStatus: HeatSetpointStatus,
-    val heatDemand: HeatDemand? = null  // Added heat demand (nullable for compatibility)
+    val heatDemand: HeatDemand? = null,  // Added heat demand (nullable for compatibility)
+    val activeFaults: List<ActiveFault> = emptyList()
 )
 
 // Temperature Status
