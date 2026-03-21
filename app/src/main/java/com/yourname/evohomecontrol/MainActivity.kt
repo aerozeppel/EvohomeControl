@@ -2,8 +2,6 @@ package com.yourname.evohomecontrol
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.appwidget.AppWidgetManager
-import android.content.ComponentName
 import android.content.Intent
 import android.graphics.Color
 import android.os.Build
@@ -22,12 +20,10 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.android.material.snackbar.Snackbar
-import com.google.gson.Gson
 import com.yourname.evohomecontrol.api.EvohomeApiClient
 import com.yourname.evohomecontrol.api.HeatSetpoint
 import com.yourname.evohomecontrol.api.Zone
 import com.yourname.evohomecontrol.databinding.ActivityMainBinding
-import com.yourname.evohomecontrol.widget.EvohomeWidget
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -65,15 +61,6 @@ class MainActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("evohome_prefs", MODE_PRIVATE)
         accessToken = prefs.getString("access_token", "") ?: ""
         userId = prefs.getString("user_id", "") ?: ""
-
-        // Check if we have credentials at all
-        val hasSavedCredentials = prefs.getBoolean("credentials_saved", false)
-        if (accessToken.isEmpty() && !hasSavedCredentials) {
-            // No credentials saved, redirect to login
-            startActivity(Intent(this, LoginActivity::class.java))
-            finish()
-            return
-        }
 
         // Set up RecyclerView
         adapter = ZoneAdapter(
@@ -121,90 +108,8 @@ class MainActivity : AppCompatActivity() {
         loadZones()
         // Check for stale data on launch
         checkDataFreshness()
-
-        // Handle widget intents
-        handleWidgetIntent(intent)
     }
 
-    private fun handleWidgetIntent(intent: Intent?) {
-    if (intent == null) return
-    
-    val autoClose = intent.getBooleanExtra("AUTO_CLOSE", false)
-
-    // NEW: Handle delayed refresh request from quick actions
-    val delayedRefreshSeconds = intent.getIntExtra("DELAYED_REFRESH_SECONDS", 0)
-    if (delayedRefreshSeconds > 0) {
-        lifecycleScope.launch {
-            Log.d("MainActivity", "Scheduling delayed refresh in $delayedRefreshSeconds seconds...")
-            delay(delayedRefreshSeconds * 1000L)
-            Log.d("MainActivity", "Executing delayed refresh now")
-            loadZones(manualRefresh = false)
-        }
-    }
-
-    when {
-        intent.getBooleanExtra("BACKGROUND_REFRESH", false) -> {
-            Log.d("MainActivity", "Background refresh requested by widget")
-            
-            // Check if there's a delayed refresh
-            val delayedRefreshSeconds = intent.getIntExtra("DELAYED_REFRESH_SECONDS", 0)
-            
-            if (delayedRefreshSeconds > 0) {
-                // Schedule delayed refresh, then close
-                lifecycleScope.launch {
-                    Log.d("MainActivity", "Scheduling delayed refresh in $delayedRefreshSeconds seconds...")
-                    delay(delayedRefreshSeconds * 1000L)
-                    Log.d("MainActivity", "Executing delayed refresh now")
-                    loadZones(manualRefresh = false)
-                    delay(2000) // Wait for data to be saved
-                    finish()
-                }
-            } else {
-                // Immediate refresh
-                loadZones(manualRefresh = false)
-                lifecycleScope.launch {
-                    delay(2000) // Wait for data to be saved
-                    finish()
-                }
-            }
-        }
-        intent.getBooleanExtra("SHOW_AWAY_DIALOG", false) -> {
-            waitForZonesAndExecute { showAwayModeDialog() }
-        }
-        intent.getBooleanExtra("CANCEL_ALL_OVERRIDES", false) -> {
-            waitForZonesAndExecute {
-                cancelAllOverridesFromWidget(autoClose)
-            }
-        }
-        intent.getBooleanExtra("SET_LUNCH_MODE", false) -> {
-            waitForZonesAndExecute {
-                setLunchModeFromWidget(autoClose)
-            }
-        }
-        intent.getBooleanExtra("SHOW_WORK_FROM_HOME_DIALOG", false) -> {
-            waitForZonesAndExecute { 
-                showWorkFromHomeDialog(autoClose = intent.getBooleanExtra("AUTO_CLOSE", false)) 
-            }
-        }
-        intent.getBooleanExtra("REFRESH_ZONES", false) -> {
-            loadZones(manualRefresh = false)
-            if (autoClose) {
-                lifecycleScope.launch {
-                    delay(3000)
-                    finish()
-                }
-            }
-        }
-        else -> {
-            // No widget intent action matched, do nothing
-        }
-    }
-}
-
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        handleWidgetIntent(intent)
-    }
 
     override fun onResume() {
         super.onResume()
@@ -256,10 +161,6 @@ class MainActivity : AppCompatActivity() {
                 showAboutDialog()
                 true
             }
-            R.id.action_logout -> {
-                logout()
-                true
-            }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -286,8 +187,7 @@ class MainActivity : AppCompatActivity() {
                             auth = "bearer $accessToken"
                         )
                     } else {
-                        onConnectionFailed("Session expired. Please login again.")
-                        logout()
+                        onConnectionFailed("Session expired. Token refresh failed.")
                         return@launch
                     }
                 }
@@ -314,8 +214,7 @@ class MainActivity : AppCompatActivity() {
                                 auth = "bearer $accessToken"
                             )
                         } else {
-                            onConnectionFailed("Session expired. Please login again.")
-                            logout()
+                            onConnectionFailed("Session expired. Token refresh failed.")
                             return@launch
                         }
                     }
@@ -332,8 +231,6 @@ class MainActivity : AppCompatActivity() {
                         // SUCCESS
                         onConnectionSuccess()
                         adapter.updateZones(allZones)
-                        saveZonesForWidget()
-                        updateWidget()
 
                         if (manualRefresh) {
                             Snackbar.make(binding.root, "Updated ${allZones.size} zones", Snackbar.LENGTH_SHORT).show()
@@ -353,14 +250,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-private fun openScheduleEditor(zone: Zone) {
-    Log.d("MainActivity", "Opening schedule for zone: ${zone.name}, ID: ${zone.zoneId}")
-    val intent = Intent(this, ScheduleEditorActivity::class.java).apply {
-        putExtra("zone_id", zone.zoneId)  // Changed from "ZONE_ID" to "zone_id"
-        putExtra("zone_name", zone.name)   // Changed from "ZONE_NAME" to "zone_name"
+
+    private fun openScheduleEditor(zone: Zone) {
+        Log.d("MainActivity", "Opening schedule for zone: ${zone.name}, ID: ${zone.zoneId}")
+        val intent = Intent(this, ScheduleEditorActivity::class.java).apply {
+            putExtra("zone_id", zone.zoneId)
+            putExtra("zone_name", zone.name)
+        }
+        startActivity(intent)
     }
-    startActivity(intent)
-}
 
 
     private fun showTempOverrideDialog(zone: Zone) {
@@ -798,11 +696,6 @@ private fun openScheduleEditor(zone: Zone) {
                 delay(2000)
                 loadZones()
 
-                val intent = Intent(this@MainActivity, com.yourname.evohomecontrol.widget.Evohome4x2Widget::class.java).apply {
-                    action = com.yourname.evohomecontrol.widget.Evohome4x2Widget.ACTION_DELAYED_REFRESH
-                }
-                sendBroadcast(intent)
-
             } catch (e: Exception) {
                 showLoading(false)
                 showError("Failed to enable away mode: ${e.message}")
@@ -953,36 +846,7 @@ private fun openScheduleEditor(zone: Zone) {
         Log.e("MainActivity", message)
     }
 
-    private fun updateWidget() {
-        // Update 2x2 widget
-        val intent2x2 = Intent(this, EvohomeWidget::class.java).apply {
-            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-        }
-        val ids2x2 = AppWidgetManager.getInstance(application).getAppWidgetIds(
-            ComponentName(application, EvohomeWidget::class.java)
-        )
-        intent2x2.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids2x2)
-        sendBroadcast(intent2x2)
 
-        // Update 4x2 widget
-        val intent4x2 = Intent(this, com.yourname.evohomecontrol.widget.Evohome4x2Widget::class.java).apply {
-            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-        }
-        val ids4x2 = AppWidgetManager.getInstance(application).getAppWidgetIds(
-            ComponentName(application, com.yourname.evohomecontrol.widget.Evohome4x2Widget::class.java)
-        )
-        intent4x2.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids4x2)
-        sendBroadcast(intent4x2)
-
-        Log.d("MainActivity", "Widget update broadcasts sent")
-    }
-
-    private fun saveZonesForWidget() {
-        val prefs = getSharedPreferences("evohome_prefs", MODE_PRIVATE)
-        val zonesJson = com.google.gson.Gson().toJson(allZones)
-        prefs.edit().putString("zones_data", zonesJson).apply()
-        android.util.Log.d("MainActivity", "Saved ${allZones.size} zones for widget")
-    }
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -1021,76 +885,69 @@ private fun openScheduleEditor(zone: Zone) {
         notificationManager.notify(zoneName.hashCode(), notification)
     }
 
-    private fun logout() {
-        AlertDialog.Builder(this)
-            .setTitle("Logout")
-            .setMessage("Are you sure you want to logout?")
-            .setPositiveButton("Yes") { _, _ ->
-                stopAutoRefresh()  // ADD THIS LINE
-
-                val prefs = getSharedPreferences("evohome_prefs", MODE_PRIVATE)
-                prefs.edit().apply {
-                    remove("access_token")
-                    remove("refresh_token")
-                    remove("user_id")
-                    remove("saved_email")
-                    remove("saved_password")
-                    putBoolean("remember_me", false)
-                    remove("last_update_timestamp")
-                    apply()
-                }
-
-                startActivity(Intent(this, LoginActivity::class.java))
-                finish()
-            }
-            .setNegativeButton("No", null)
-            .show()
-    }
-
     private suspend fun refreshAccessToken(): Boolean {
-        return try {
-            val prefs = getSharedPreferences("evohome_prefs", MODE_PRIVATE)
-            val refreshToken = prefs.getString("refresh_token", "") ?: ""
-            val email = prefs.getString("saved_email", "") ?: ""
-            val password = prefs.getString("saved_password", "") ?: ""
+        val prefs = getSharedPreferences("evohome_prefs", MODE_PRIVATE)
+        val refreshToken = prefs.getString("refresh_token", "") ?: ""
 
-            if (refreshToken.isEmpty() && (email.isEmpty() || password.isEmpty())) {
-                // No way to refresh, need to login again
-                return false
-            }
-
-            // Try to use refresh token first, fall back to re-login if needed
-            val response = if (refreshToken.isNotEmpty()) {
-                EvohomeApiClient.apiService.refreshToken(
+        // Step 1: Try refresh token if available
+        if (refreshToken.isNotEmpty()) {
+            try {
+                val response = EvohomeApiClient.apiService.refreshToken(
                     grantType = "refresh_token",
                     refreshToken = refreshToken
                 )
-            } else {
-                EvohomeApiClient.apiService.getTokens(
-                    grantType = "password",
-                    username = email,
-                    password = password
-                )
+                if (response.isSuccessful && response.body() != null) {
+                    val tokenResponse = response.body()!!
+                    accessToken = tokenResponse.access_token
+                    prefs.edit().apply {
+                        putString("access_token", tokenResponse.access_token)
+                        putString("refresh_token", tokenResponse.refresh_token)
+                        apply()
+                    }
+                    Log.d("MainActivity", "Token refreshed via refresh_token")
+                    return true
+                }
+                Log.w("MainActivity", "Refresh token failed: ${response.code()}, falling back to password login")
+            } catch (e: Exception) {
+                Log.w("MainActivity", "Refresh token error: ${e.message}, falling back to password login")
             }
+        }
 
+        // Step 2: Fall back to password-based login using hardcoded credentials
+        return try {
+            val response = EvohomeApiClient.apiService.getTokens(
+                grantType = "password",
+                username = Credentials.EMAIL,
+                password = Credentials.PASSWORD
+            )
             if (response.isSuccessful && response.body() != null) {
                 val tokenResponse = response.body()!!
                 accessToken = tokenResponse.access_token
+
+                // Also fetch userId if we don't have it
+                if (userId.isEmpty()) {
+                    val accountResponse = EvohomeApiClient.apiService.getUserAccount(
+                        auth = "bearer $accessToken"
+                    )
+                    if (accountResponse.isSuccessful && accountResponse.body() != null) {
+                        userId = accountResponse.body()!!.userId
+                        prefs.edit().putString("user_id", userId).apply()
+                    }
+                }
 
                 prefs.edit().apply {
                     putString("access_token", tokenResponse.access_token)
                     putString("refresh_token", tokenResponse.refresh_token)
                     apply()
                 }
-
-                Log.d("MainActivity", "Token refreshed successfully")
+                Log.d("MainActivity", "Token refreshed via password login")
                 true
             } else {
-                Log.e("MainActivity", "Token refresh failed: ${response.code()}")
+                Log.e("MainActivity", "Password login failed: ${response.code()}")
                 false
             }
         } catch (e: Exception) {
-            Log.e("MainActivity", "Token refresh error: ${e.message}")
+            Log.e("MainActivity", "Password login error: ${e.message}")
             false
         }
     }
@@ -1290,15 +1147,12 @@ private fun openScheduleEditor(zone: Zone) {
         }
     }
 
-    private fun showWorkFromHomeDialog(autoClose: Boolean = false) {
+    private fun showWorkFromHomeDialog() {
         // Find the kitchen zone
         val kitchenZone = allZones.find { it.name.equals("Kitchen", ignoreCase = true) }
 
         if (kitchenZone == null) {
             showError("Kitchen zone not found")
-            if (autoClose) {
-                finish()
-            }
             return
         }
 
@@ -1356,28 +1210,13 @@ private fun openScheduleEditor(zone: Zone) {
                             delay(2000)
                             loadZones()
 
-                            val intent = Intent(this@MainActivity, com.yourname.evohomecontrol.widget.Evohome4x2Widget::class.java).apply {
-                                action = com.yourname.evohomecontrol.widget.Evohome4x2Widget.ACTION_DELAYED_REFRESH
-                            }
-                            sendBroadcast(intent)
-
-                            if (autoClose) {
-                                delay(1000) // Small delay to let snackbar show briefly
-                                finish()
-                            }
                         } else {
                             showError("Failed to set work from home mode: ${response.code()}")
-                            if (autoClose) {
-                                finish()
-                            }
                         }
                     } catch (e: Exception) {
                         showLoading(false)
                         showError("Error setting work from home mode: ${e.message}")
                         e.printStackTrace()
-                        if (autoClose) {
-                            finish()
-                        }
                     }
                 }
             },
@@ -1386,173 +1225,8 @@ private fun openScheduleEditor(zone: Zone) {
             true // 24-hour format
         )
         
-        timePickerDialog.setOnCancelListener {
-             if (autoClose) {
-                 finish()
-             }
-        }
-        
         timePickerDialog.show()
     }
 
-    private fun waitForZonesAndExecute(action: () -> Unit) {
-        lifecycleScope.launch {
-            // If zones are already loaded, execute immediately
-            if (allZones.isNotEmpty()) {
-                action()
-                return@launch
-            }
 
-            // If not loaded, show loading and wait
-            showLoading(true)
-            var attempts = 0
-            while (allZones.isEmpty() && attempts < 10) { // Max 10 attempts (10 seconds)
-                delay(1000)
-                attempts++
-            }
-            showLoading(false)
-
-            if (allZones.isNotEmpty()) {
-                action()
-            } else {
-                showError("Could not load zones for widget action.")
-                finish() // Close activity if zones can't be loaded
-            }
-        }
-    }
-
-    private fun cancelAllOverridesFromWidget(autoClose: Boolean) {
-        if (allZones.isEmpty()) {
-            showError("No zones available")
-            if (autoClose) {
-                finish()
-            }
-            return
-        }
-
-        // Skip the confirmation dialog for widget actions
-        showLoading(true)
-
-        lifecycleScope.launch {
-            try {
-                val tasks = allZones.map { zone ->
-                    async {
-                        try {
-                            val setpoint = HeatSetpoint(
-                                HeatSetpointValue = 0.0,
-                                SetpointMode = 0,
-                                TimeUntil = null
-                            )
-
-                            val response = EvohomeApiClient.apiService.setTemperature(
-                                zoneId = zone.zoneId,
-                                auth = "bearer $accessToken",
-                                setpoint = setpoint
-                            )
-
-                            response.isSuccessful
-                        } catch (e: Exception) {
-                            Log.e("CancelOverrides", "Error canceling ${zone.name}: ${e.message}")
-                            false
-                        }
-                    }
-                }
-
-                val results = tasks.map { it.await() }
-                val successCount = results.count { it }
-
-                showLoading(false)
-
-                if (successCount > 0) {
-                    // Update widget
-                    val intent = Intent(this@MainActivity, com.yourname.evohomecontrol.widget.Evohome4x2Widget::class.java).apply {
-                        action = com.yourname.evohomecontrol.widget.Evohome4x2Widget.ACTION_DELAYED_REFRESH
-                    }
-                    sendBroadcast(intent)
-
-                    if (autoClose) {
-                        // Close app and return to home screen
-                        finish()
-                    } else {
-                        loadZones()
-                    }
-                } else {
-                    showError("Failed to cancel overrides")
-                    if (autoClose) {
-                        finish()
-                    }
-                }
-
-            } catch (e: Exception) {
-                showLoading(false)
-                showError("Failed to cancel overrides: ${e.message}")
-                if (autoClose) {
-                    finish()
-                }
-            }
-        }
-    }
-
-    private fun setLunchModeFromWidget(autoClose: Boolean) {
-        val kitchenZone = allZones.find { it.name.equals("Kitchen", ignoreCase = true) }
-
-        if (kitchenZone == null) {
-            showError("Kitchen zone not found")
-            if (autoClose) {
-                finish()
-            }
-            return
-        }
-
-        showLoading(true)
-
-        lifecycleScope.launch {
-            try {
-                val calendar = Calendar.getInstance()
-                calendar.add(Calendar.MINUTE, 45)
-                val timeUntil = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
-                    timeZone = TimeZone.getTimeZone("UTC")
-                }.format(calendar.time)
-
-                val setpoint = HeatSetpoint(
-                    HeatSetpointValue = 19.5,
-                    SetpointMode = 2,
-                    TimeUntil = timeUntil
-                )
-
-                val response = EvohomeApiClient.apiService.setTemperature(
-                    zoneId = kitchenZone.zoneId,
-                    auth = "bearer $accessToken",
-                    setpoint = setpoint
-                )
-
-                showLoading(false)
-
-                if (response.isSuccessful) {
-                    // Update widget
-                    val intent = Intent(this@MainActivity, com.yourname.evohomecontrol.widget.Evohome4x2Widget::class.java).apply {
-                        action = com.yourname.evohomecontrol.widget.Evohome4x2Widget.ACTION_DELAYED_REFRESH
-                    }
-                    sendBroadcast(intent)
-
-                    if (autoClose) {
-                        finish()
-                    } else {
-                        loadZones()
-                    }
-                } else {
-                    showError("Failed to set lunch mode: ${response.code()}")
-                    if (autoClose) {
-                        finish()
-                    }
-                }
-            } catch (e: Exception) {
-                showLoading(false)
-                showError("Error setting lunch mode: ${e.message}")
-                if (autoClose) {
-                    finish()
-                }
-            }
-        }
-    }
 }

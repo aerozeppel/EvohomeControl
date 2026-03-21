@@ -16,10 +16,6 @@
         android:theme="@style/AppTheme">
         
         <activity
-            android:name=".LoginActivity"
-            android:exported="false" />
-        
-        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
@@ -38,73 +34,6 @@
             android:name=".SwitchpointEditorActivity"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme" />
-
-        <activity
-            android:name=".WidgetBoostActivity"
-            android:theme="@style/DialogActivityTheme"
-            android:excludeFromRecents="true"
-            android:exported="false" />
-
-        <receiver
-            android:name=".widget.EvohomeWidget"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.yourname.evohomecontrol.ACTION_BOOST" />
-                <action android:name="com.yourname.evohomecontrol.ACTION_REFRESH" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/evohome_widget_info" />
-        </receiver>
-
-        <receiver
-            android:name=".widget.Evohome4x2Widget"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="android.intent.action.SCREEN_ON" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/evohome_widget_4x2_info" />
-        </receiver>
-        
-        <activity
-            android:name=".WidgetZoneEditActivity"
-            android:theme="@style/DialogActivityTheme"
-            android:excludeFromRecents="true"
-            android:exported="false" />
-
-        <activity
-            android:name=".WidgetAwayModeActivity"
-            android:theme="@style/DialogActivityTheme"
-            android:excludeFromRecents="true"
-            android:taskAffinity=""
-            android:exported="false" />
-
-        <activity
-            android:name=".WidgetWorkFromHomeActivity"
-            android:theme="@style/DialogActivityTheme"
-            android:excludeFromRecents="true"
-            android:taskAffinity=""
-            android:exported="false" />
-
-        <activity
-            android:name=".WidgetReturnHomeActivity"
-            android:theme="@style/DialogActivityTheme"
-            android:excludeFromRecents="true"
-            android:launchMode="singleInstance"
-            android:taskAffinity=""
-            android:exported="false" />
-
-        <activity
-            android:name=".WidgetLunchActivity"
-            android:theme="@style/DialogActivityTheme"
-            android:excludeFromRecents="true"
-            android:launchMode="singleInstance"
-            android:taskAffinity=""
-            android:exported="false" />
             
     </application>
 
