@@ -1,5 +1,7 @@
 package com.yourname.evohomecontrol.api
 
+import okhttp3.ConnectionPool
+import java.util.concurrent.TimeUnit
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -32,6 +34,9 @@ object EvohomeApiClient {
     private val httpClient = OkHttpClient.Builder()
         .addInterceptor(loggingInterceptor)
         .addInterceptor(authInterceptor)
+        .connectionPool(ConnectionPool(5, 5, TimeUnit.SECONDS))
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(15, TimeUnit.SECONDS)
         .build()
     
     private val retrofit = Retrofit.Builder()
