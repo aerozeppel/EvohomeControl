@@ -13,6 +13,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
@@ -577,8 +578,17 @@ class SwitchpointAdapter(
     private var switchpoints = listOf<Switchpoint>()
 
     fun submitList(list: List<Switchpoint>) {
+        val diffCallback = object : DiffUtil.Callback() {
+            override fun getOldListSize() = switchpoints.size
+            override fun getNewListSize() = list.size
+            override fun areItemsTheSame(oldPos: Int, newPos: Int) =
+                switchpoints[oldPos].timeOfDay == list[newPos].timeOfDay
+            override fun areContentsTheSame(oldPos: Int, newPos: Int) =
+                switchpoints[oldPos] == list[newPos]
+        }
+        val diffResult = DiffUtil.calculateDiff(diffCallback)
         switchpoints = list
-        notifyDataSetChanged()
+        diffResult.dispatchUpdatesTo(this)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SwitchpointViewHolder {

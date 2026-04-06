@@ -14,7 +14,7 @@ object EvohomeApiClient {
     private const val BASIC_AUTH = "Basic YjAxM2FhMjYtOTcyNC00ZGJkLTg4OTctMDQ4YjlhYWRhMjQ5OnRlc3Q="
     
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+        level = HttpLoggingInterceptor.Level.BASIC
     }
     
     private val authInterceptor = Interceptor { chain ->
@@ -34,7 +34,7 @@ object EvohomeApiClient {
     private val httpClient = OkHttpClient.Builder()
         .addInterceptor(loggingInterceptor)
         .addInterceptor(authInterceptor)
-        .connectionPool(ConnectionPool(5, 5, TimeUnit.SECONDS))
+        .connectionPool(ConnectionPool(2, 120, TimeUnit.SECONDS))
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)
         .build()

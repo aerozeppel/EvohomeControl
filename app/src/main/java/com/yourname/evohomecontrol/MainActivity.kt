@@ -32,6 +32,13 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
+// Pre-allocated date formatters (avoid creating new objects on every call)
+private val UTC_DATE_FORMAT = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
+    timeZone = TimeZone.getTimeZone("UTC")
+}
+private val TIME_FORMAT = SimpleDateFormat("HH:mm", Locale.US)
+private val DATE_FORMAT = SimpleDateFormat("MMM dd", Locale.US)
+
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
@@ -99,6 +106,9 @@ class MainActivity : AppCompatActivity() {
         // Load last update timestamp
         lastSuccessfulUpdate = prefs.getLong("last_update_timestamp", 0)
 
+        // Restore cached locationId
+        locationId = prefs.getString("location_id", "") ?: ""
+
         // Setup connection status indicator
         setupConnectionStatusBar()
         // Create notification channel
@@ -106,8 +116,6 @@ class MainActivity : AppCompatActivity() {
 
         // Initial load
         loadZones()
-        // Check for stale data on launch
-        checkDataFreshness()
     }
 
 
@@ -166,51 +174,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadZones(manualRefresh: Boolean = false) {
-        binding.swipeRefreshLayout.isRefreshing = false
-
         if (manualRefresh) {
             showLoading(true)
         }
 
         lifecycleScope.launch {
             try {
-                var installationsResponse = EvohomeApiClient.apiService.getInstallations(
-                    userId = userId,
-                    auth = "bearer $accessToken"
-                )
-
-                if (installationsResponse.code() == 401) {
-                    Log.d("MainActivity", "Token expired, attempting refresh...")
-                    if (refreshAccessToken()) {
-                        installationsResponse = EvohomeApiClient.apiService.getInstallations(
-                            userId = userId,
-                            auth = "bearer $accessToken"
-                        )
-                    } else {
-                        onConnectionFailed("Session expired. Token refresh failed.")
-                        return@launch
-                    }
-                }
-
-                if (installationsResponse.isSuccessful && installationsResponse.body() != null) {
-                    val installations = installationsResponse.body()!!
-
-                    if (installations.isEmpty()) {
-                        onConnectionFailed("No locations found")
-                        return@launch
-                    }
-
-                    locationId = installations[0].locationInfo.locationId
-
-                    var statusResponse = EvohomeApiClient.apiService.getLocationStatus(
-                        locationId = locationId,
+                // Only fetch locationId if not cached
+                if (locationId.isEmpty()) {
+                    var installationsResponse = EvohomeApiClient.apiService.getInstallations(
+                        userId = userId,
                         auth = "bearer $accessToken"
                     )
 
-                    if (statusResponse.code() == 401) {
+                    if (installationsResponse.code() == 401) {
+                        Log.d("MainActivity", "Token expired, attempting refresh...")
                         if (refreshAccessToken()) {
-                            statusResponse = EvohomeApiClient.apiService.getLocationStatus(
-                                locationId = locationId,
+                            installationsResponse = EvohomeApiClient.apiService.getInstallations(
+                                userId = userId,
                                 auth = "bearer $accessToken"
                             )
                         } else {
@@ -219,33 +200,66 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
 
-                    if (statusResponse.isSuccessful && statusResponse.body() != null) {
-                        val installation = statusResponse.body()!!
+                    if (installationsResponse.isSuccessful && installationsResponse.body() != null) {
+                        val installations = installationsResponse.body()!!
 
-                        allZones = installation.gateways.flatMap { gateway ->
-                            gateway.temperatureControlSystems.flatMap { system ->
-                                system.zones
-                            }
+                        if (installations.isEmpty()) {
+                            onConnectionFailed("No locations found")
+                            return@launch
                         }
 
-                        // SUCCESS
-                        onConnectionSuccess()
-                        adapter.updateZones(allZones)
-
-                        if (manualRefresh) {
-                            Snackbar.make(binding.root, "Updated ${allZones.size} zones", Snackbar.LENGTH_SHORT).show()
-                        }
+                        locationId = installations[0].locationInfo.locationId
+                        // Cache locationId for future refreshes
+                        val prefs = getSharedPreferences("evohome_prefs", MODE_PRIVATE)
+                        prefs.edit().putString("location_id", locationId).apply()
                     } else {
-                        onConnectionFailed("Failed to load temperatures: ${statusResponse.code()}")
+                        onConnectionFailed("Failed to load locations: ${installationsResponse.code()}")
+                        return@launch
+                    }
+                }
+
+                var statusResponse = EvohomeApiClient.apiService.getLocationStatus(
+                    locationId = locationId,
+                    auth = "bearer $accessToken"
+                )
+
+                if (statusResponse.code() == 401) {
+                    if (refreshAccessToken()) {
+                        statusResponse = EvohomeApiClient.apiService.getLocationStatus(
+                            locationId = locationId,
+                            auth = "bearer $accessToken"
+                        )
+                    } else {
+                        onConnectionFailed("Session expired. Token refresh failed.")
+                        return@launch
+                    }
+                }
+
+                if (statusResponse.isSuccessful && statusResponse.body() != null) {
+                    val installation = statusResponse.body()!!
+
+                    allZones = installation.gateways.flatMap { gateway ->
+                        gateway.temperatureControlSystems.flatMap { system ->
+                            system.zones
+                        }
+                    }
+
+                    // SUCCESS
+                    onConnectionSuccess()
+                    adapter.updateZones(allZones)
+
+                    if (manualRefresh) {
+                        Snackbar.make(binding.root, "Updated ${allZones.size} zones", Snackbar.LENGTH_SHORT).show()
                     }
                 } else {
-                    onConnectionFailed("Failed to load locations: ${installationsResponse.code()}")
+                    onConnectionFailed("Failed to load temperatures: ${statusResponse.code()}")
                 }
             } catch (e: Exception) {
                 onConnectionFailed("Network error: ${e.message}")
                 e.printStackTrace()
             } finally {
                 showLoading(false)
+                binding.swipeRefreshLayout.isRefreshing = false
             }
         }
     }
@@ -440,9 +454,7 @@ class MainActivity : AppCompatActivity() {
                     // Temporary override
                     val calendar = Calendar.getInstance()
                     calendar.add(Calendar.MINUTE, durationMinutes)
-                    val timeUntil = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
-                        timeZone = TimeZone.getTimeZone("UTC")
-                    }.format(calendar.time)
+                    val timeUntil = UTC_DATE_FORMAT.format(calendar.time)
 
                     HeatSetpoint(
                         HeatSetpointValue = temperature,
@@ -478,7 +490,7 @@ class MainActivity : AppCompatActivity() {
                         cancelOverride(zoneId)
                     }.show()
 
-                    delay(2000)
+                    delay(1000)
                     loadZones()
                 } else {
                     showError("Failed: ${response.code()}")
@@ -508,7 +520,7 @@ class MainActivity : AppCompatActivity() {
 
                 if (response.isSuccessful) {
                     Snackbar.make(binding.root, "Now following schedule", Snackbar.LENGTH_SHORT).show()
-                    delay(2000)
+                    delay(1000)
                     loadZones()
                 } else {
                     showError("Failed: ${response.code()}")
@@ -552,8 +564,8 @@ class MainActivity : AppCompatActivity() {
             // Calculate end time
             val calendar = Calendar.getInstance()
             calendar.add(Calendar.MINUTE, currentDurationMinutes)
-            val endTime = SimpleDateFormat("HH:mm", Locale.US).format(calendar.time)
-            val endDate = SimpleDateFormat("MMM dd", Locale.US).format(calendar.time)
+            val endTime = TIME_FORMAT.format(calendar.time)
+            val endDate = DATE_FORMAT.format(calendar.time)
 
             // Show date if more than 24 hours
             durationSubtext.text = if (currentDurationMinutes >= 1440) {
@@ -628,9 +640,7 @@ class MainActivity : AppCompatActivity() {
                 // Calculate end time
                 val calendar = Calendar.getInstance()
                 calendar.add(Calendar.MINUTE, durationMinutes)
-                val timeUntil = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
-                    timeZone = TimeZone.getTimeZone("UTC")
-                }.format(calendar.time)
+                val timeUntil = UTC_DATE_FORMAT.format(calendar.time)
 
                 // Create a list of deferred tasks
                 val tasks = allZones.map { zone ->
@@ -693,7 +703,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 // Refresh zone list after delay
-                delay(2000)
+                delay(1000)
                 loadZones()
 
             } catch (e: Exception) {
@@ -782,7 +792,7 @@ class MainActivity : AppCompatActivity() {
                     ).show()
                 }
 
-                delay(2000)
+                delay(1000)
                 loadZones()
 
             } catch (e: Exception) {
@@ -991,10 +1001,7 @@ class MainActivity : AppCompatActivity() {
         return !isDataStale() && isConnected
     }
 
-    private fun checkDataFreshness() {
-        // Function kept for compatibility but refresh now happens automatically in onResume
-        // No need to show warning since we auto-refresh
-    }
+
 
     private fun showStaleDataWarning() {
         val minutesOld = (System.currentTimeMillis() - lastSuccessfulUpdate) / 60_000
@@ -1034,7 +1041,7 @@ class MainActivity : AppCompatActivity() {
 
         showConnectionStatus(
             connected = true,
-            message = "Connected - Last updated: ${SimpleDateFormat("HH:mm", Locale.US).format(Date())}",
+            message = "Connected - Last updated: ${TIME_FORMAT.format(Date())}",
             isWarning = false
         )
 
@@ -1109,9 +1116,7 @@ class MainActivity : AppCompatActivity() {
                 // Calculate end time (45 minutes from now)
                 val calendar = Calendar.getInstance()
                 calendar.add(Calendar.MINUTE, 45)
-                val timeUntil = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
-                    timeZone = TimeZone.getTimeZone("UTC")
-                }.format(calendar.time)
+                val timeUntil = UTC_DATE_FORMAT.format(calendar.time)
 
                 val setpoint = HeatSetpoint(
                     HeatSetpointValue = 19.5,
@@ -1134,7 +1139,7 @@ class MainActivity : AppCompatActivity() {
                         Snackbar.LENGTH_LONG
                     ).show()
 
-                    delay(2000)
+                    delay(1000)
                     loadZones()
                 } else {
                     showError("Failed to set lunch mode: ${response.code()}")
@@ -1176,9 +1181,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-                val timeUntil = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
-                    timeZone = TimeZone.getTimeZone("UTC")
-                }.format(endTime.time)
+                val timeUntil = UTC_DATE_FORMAT.format(endTime.time)
 
                 // Set kitchen to 18.5°C until selected time
                 showLoading(true)
@@ -1200,14 +1203,14 @@ class MainActivity : AppCompatActivity() {
                         showLoading(false)
 
                         if (response.isSuccessful) {
-                            val endTimeStr = SimpleDateFormat("HH:mm", Locale.US).format(endTime.time)
+                            val endTimeStr = TIME_FORMAT.format(endTime.time)
                             Snackbar.make(
                                 binding.root,
                                 "Work from home: Kitchen set to 18.5°C until $endTimeStr",
                                 Snackbar.LENGTH_LONG
                             ).show()
 
-                            delay(2000)
+                            delay(1000)
                             loadZones()
 
                         } else {

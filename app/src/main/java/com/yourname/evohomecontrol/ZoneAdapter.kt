@@ -15,7 +15,6 @@ class ZoneAdapter(
     private val onScheduleClick: (Zone) -> Unit
 ) : RecyclerView.Adapter<ZoneAdapter.ZoneViewHolder>() {
 
-    private var zoneManager: ZoneManager = ZoneManager(zones)
 
     class ZoneViewHolder(val binding: ZoneItemBinding) : RecyclerView.ViewHolder(binding.root)
 
@@ -98,12 +97,10 @@ class ZoneAdapter(
         val diffResult = DiffUtil.calculateDiff(diffCallback)
         
         zones = newZones
-        zoneManager = ZoneManager(newZones)
         
         diffResult.dispatchUpdatesTo(this)
     }
-    
-    fun getZoneManager(): ZoneManager = zoneManager
+
 
     class ZoneDiffCallback(
         private val oldList: List<Zone>,
