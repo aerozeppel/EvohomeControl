@@ -110,3 +110,11 @@ data class HeatSetpoint(
     val SetpointMode: Int,  // 0=FollowSchedule, 1=PermanentOverride, 2=TemporaryOverride
     val TimeUntil: String? = null  // Format: "YYYY-MM-DDTHH:MM:SSZ"
 )
+
+// Backup Model
+data class ScheduleBackup(
+    val id: String,
+    val name: String,
+    val timestamp: Long,
+    val schedules: Map<String, ZoneSchedule> // Key is zone.name
+)

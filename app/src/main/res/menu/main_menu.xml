@@ -19,6 +19,12 @@
         
         <menu>
             <item
+                android:id="@+id/action_schedules_backup"
+                android:title="Backup Schedules" />
+            <item
+                android:id="@+id/action_schedules_restore"
+                android:title="Restore Schedules" />
+            <item
                 android:id="@+id/action_preferences"
                 android:title="Preferences" />
             

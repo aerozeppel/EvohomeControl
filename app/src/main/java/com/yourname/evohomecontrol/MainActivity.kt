@@ -23,7 +23,12 @@ import com.google.android.material.snackbar.Snackbar
 import com.yourname.evohomecontrol.api.EvohomeApiClient
 import com.yourname.evohomecontrol.api.HeatSetpoint
 import com.yourname.evohomecontrol.api.Zone
+import com.yourname.evohomecontrol.api.ZoneSchedule
+import com.yourname.evohomecontrol.api.ScheduleBackup
 import com.yourname.evohomecontrol.databinding.ActivityMainBinding
+import android.widget.EditText
+import android.widget.LinearLayout
+import android.net.Uri
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -55,11 +60,15 @@ class MainActivity : AppCompatActivity() {
     private val AUTO_REFRESH_INTERVAL = 120_000L // 2 minutes
     private val STALE_DATA_THRESHOLD = 300_000L // 5 minutes
     private val MAX_CONSECUTIVE_FAILURES = 3
+    
+    private lateinit var backupManager: ScheduleBackupManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        
+        backupManager = ScheduleBackupManager(this)
 
         // Set up toolbar
         setSupportActionBar(binding.toolbar)
@@ -155,6 +164,14 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     showStaleDataWarning()
                 }
+                true
+            }
+            R.id.action_schedules_backup -> {
+                backupSchedules()
+                true
+            }
+            R.id.action_schedules_restore -> {
+                showRestoreDialog()
                 true
             }
             R.id.action_preferences -> {
@@ -1231,5 +1248,201 @@ class MainActivity : AppCompatActivity() {
         timePickerDialog.show()
     }
 
+    private fun backupSchedules() {
+        val input = EditText(this)
+        val lp = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.MATCH_PARENT
+        )
+        input.layoutParams = lp
+        input.hint = "Backup Name"
+        
+        AlertDialog.Builder(this)
+            .setTitle("Backup Schedules")
+            .setView(input)
+            .setPositiveButton("Save") { _, _ ->
+                val name = input.text.toString()
+                if (name.isNotBlank()) {
+                    executeBackup(name)
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
 
+    private fun executeBackup(backupName: String) {
+        showLoading(true)
+        lifecycleScope.launch {
+            try {
+                val scheduleMap = mutableMapOf<String, ZoneSchedule>()
+                val tasks = allZones.map { zone ->
+                    async {
+                        val response = EvohomeApiClient.apiService.getZoneSchedule(
+                            zoneId = zone.zoneId,
+                            auth = "bearer $accessToken"
+                        )
+                        if (response.isSuccessful && response.body() != null) {
+                            scheduleMap[zone.name] = response.body()!!
+                        }
+                    }
+                }
+                tasks.forEach { it.await() }
+                
+                val backup = ScheduleBackup(
+                    id = java.util.UUID.randomUUID().toString(),
+                    name = backupName,
+                    timestamp = System.currentTimeMillis(),
+                    schedules = scheduleMap
+                )
+                
+                backupManager.saveBackup(backup)
+                showLoading(false)
+                Snackbar.make(binding.root, "Saved backup: $backupName", Snackbar.LENGTH_SHORT).show()
+                
+            } catch (e: Exception) {
+                showLoading(false)
+                showError("Backup failed: ${e.message}")
+            }
+        }
+    }
+
+    private fun showRestoreDialog() {
+        val backups = backupManager.getBackups()
+        
+        val options = mutableListOf<String>()
+        options.add("Import Backup (Paste)")
+        backups.forEach { 
+            val date = java.text.SimpleDateFormat("MMM dd, yyyy HH:mm", java.util.Locale.getDefault()).format(java.util.Date(it.timestamp))
+            options.add("${it.name} ($date)") 
+        }
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Restore Schedules")
+            .setItems(options.toTypedArray()) { _, which ->
+                if (which == 0) {
+                    importBackupDialog()
+                } else {
+                    val selectedBackup = backups[which - 1]
+                    showBackupOptionsDialog(selectedBackup)
+                }
+            }
+            .create()
+            
+        dialog.listView.setOnItemLongClickListener { _, _, position, _ ->
+            if (position > 0) {
+                val selectedBackup = backups[position - 1]
+                AlertDialog.Builder(this@MainActivity)
+                    .setTitle("Delete Backup")
+                    .setMessage("Are you sure you want to delete '${selectedBackup.name}'?")
+                    .setPositiveButton("Delete") { _, _ ->
+                        backupManager.deleteBackup(selectedBackup.id)
+                        Snackbar.make(binding.root, "Deleted backup '${selectedBackup.name}'", Snackbar.LENGTH_SHORT).show()
+                        dialog.dismiss()
+                        // Re-open dialog to refresh the list automatically
+                        showRestoreDialog()
+                    }
+                    .setNegativeButton("Cancel", null)
+                    .show()
+                true // Consume the long click event
+            } else {
+                false // Don't consume long click on the "Import" item
+            }
+        }
+        
+        dialog.show()
+    }
+    
+    private fun showBackupOptionsDialog(backup: ScheduleBackup) {
+        val options = arrayOf("Restore", "Email Export")
+        AlertDialog.Builder(this)
+            .setTitle(backup.name)
+            .setItems(options) { _, which ->
+                when(which) {
+                    0 -> performRestore(backup)
+                    1 -> emailBackup(backup)
+                }
+            }
+            .show()
+    }
+
+    private fun performRestore(backup: ScheduleBackup) {
+        showLoading(true)
+        lifecycleScope.launch {
+            try {
+                val tasks = allZones.mapNotNull { zone ->
+                    val savedSchedule = backup.schedules[zone.name]
+                    if (savedSchedule != null) {
+                        async {
+                            EvohomeApiClient.apiService.updateZoneSchedule(
+                                zoneId = zone.zoneId,
+                                auth = "bearer $accessToken",
+                                schedule = savedSchedule
+                            ).isSuccessful
+                        }
+                    } else {
+                        Log.w("Restore", "No schedule found for zone: ${zone.name}")
+                        null
+                    }
+                }
+                
+                val results = tasks.map { it.await() }
+                val successCount = results.count { it }
+                val failCount = results.count { !it }
+                
+                showLoading(false)
+                if (failCount == 0) {
+                    Snackbar.make(binding.root, "Restored $successCount zones", Snackbar.LENGTH_LONG).show()
+                } else {
+                    Snackbar.make(binding.root, "Restored $successCount zones ($failCount failed)", Snackbar.LENGTH_LONG).show()
+                }
+                
+                delay(1000)
+                loadZones()
+                
+            } catch (e: Exception) {
+                showLoading(false)
+                showError("Restore failed: ${e.message}")
+            }
+        }
+    }
+
+    private fun emailBackup(backup: ScheduleBackup) {
+        val jsonString = backupManager.exportBackup(backup)
+        
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_EMAIL, arrayOf("dean@redkit.co.uk"))
+            putExtra(Intent.EXTRA_SUBJECT, "Evohome Schedule Backup: ${backup.name}")
+            putExtra(Intent.EXTRA_TEXT, jsonString)
+        }
+        
+        startActivity(Intent.createChooser(intent, "Share/Email Backup"))
+    }
+
+    private fun importBackupDialog() {
+        val input = EditText(this)
+        val lp = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.MATCH_PARENT
+        )
+        input.layoutParams = lp
+        input.hint = "Paste JSON here"
+        
+        AlertDialog.Builder(this)
+            .setTitle("Import Backup")
+            .setView(input)
+            .setPositiveButton("Import") { _, _ ->
+                val json = input.text.toString()
+                if (json.isNotBlank()) {
+                    val imported = backupManager.importBackup(json)
+                    if (imported != null) {
+                        Snackbar.make(binding.root, "Imported backup: ${imported.name}", Snackbar.LENGTH_SHORT).show()
+                    } else {
+                        showError("Invalid backup data format")
+                    }
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
 }
